@@ -1,0 +1,26 @@
+# Minimal config for `supabase start` (local dev). Project refs are linked by the owner, not stored here.
+project_id = "thanksgiving-bags"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+major_version = 15
+
+[auth]
+enabled = true
+site_url = "http://localhost:4200"
+additional_redirect_urls = ["http://localhost:4200/admin", "https://dieggomyeggo.github.io/thanksgiving-bags/admin"]
+enable_signup = true
+
+[functions.place-order]
+verify_jwt = false   # public; guarded by honeypot, rate limit and server-side recomputation
+[functions.notify]
+verify_jwt = true
+[functions.expire-unpaid]
+verify_jwt = true
+[functions.purge-pii]
+verify_jwt = true
