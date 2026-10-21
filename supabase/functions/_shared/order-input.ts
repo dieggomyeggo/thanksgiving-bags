@@ -3,6 +3,7 @@ import { normalizeZip } from './zip.ts';
 
 export interface OrderInput {
   items: Record<string, number>;
+  freeItems: Record<string, number>;
   method: Method;
   zip: string | null;
   address: string | null;
@@ -35,6 +36,11 @@ export function validateOrderInput(raw: unknown): InputResult {
     for (const [k, v] of Object.entries(r['items'] as Record<string, unknown>)) items[k.slice(0, 64)] = typeof v === 'number' ? v : NaN;
   } else errors.push('items required');
 
+  const freeItems: Record<string, number> = {};
+  if (r['freeItems'] && typeof r['freeItems'] === 'object' && !Array.isArray(r['freeItems'])) {
+    for (const [k, v] of Object.entries(r['freeItems'] as Record<string, unknown>)) freeItems[k.slice(0, 64)] = typeof v === 'number' ? v : NaN;
+  }
+
   const method = r['method'] as Method;
   if (!METHODS.includes(method)) errors.push('method invalid');
   const payMethod = r['payMethod'] as PayMethod;
@@ -64,6 +70,7 @@ export function validateOrderInput(raw: unknown): InputResult {
     ok: true,
     value: {
       items,
+      freeItems,
       method,
       zip,
       address: method === 'pickup' ? null : addressRaw,

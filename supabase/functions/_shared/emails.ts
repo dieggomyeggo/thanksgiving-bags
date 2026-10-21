@@ -10,7 +10,7 @@ export interface EmailOrder {
   name: string;
   method: Method;
   payMethod: PayMethod;
-  lines: { name: string; qty: number; totalCents: number }[];
+  lines: { name: string; qty: number; totalCents: number; free?: boolean }[];
   subtotalCents: number;
   shippingCents: number;
   totalCents: number;
@@ -40,7 +40,7 @@ export function paymentInstructions(pay: PayMethod, number: string, s: Pick<Sett
 }
 
 function summaryText(o: EmailOrder): string {
-  const lines = o.lines.map((l) => `  ${l.qty} x ${l.name}  ${money(l.totalCents)}`).join('\n');
+  const lines = o.lines.map((l) => `  ${l.qty} x ${l.name}  ${l.free ? 'FREE' : money(l.totalCents)}`).join('\n');
   const ship = o.shippingQuoteNeeded ? 'to be quoted' : money(o.shippingCents);
   const total = o.shippingQuoteNeeded ? `${money(o.totalCents)} + shipping` : money(o.totalCents);
   return `${lines}\n  Items: ${money(o.subtotalCents)}\n  Delivery/shipping: ${ship}\n  Total: ${total}`;

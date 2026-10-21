@@ -42,4 +42,8 @@ describe('donation', () => {
   it('donation = profit + bonus share', () => {
     expect(donationCents(5000, 2500)).toBe(7500);
   });
+  it('free extras reduce profit by their cost', () => {
+    const lines = [{ itemId: 'a', qty: 1, unitPriceCents: 325, unitCostCents: 247 }, { itemId: 'cocoa', qty: 2, unitPriceCents: 0, unitCostCents: 45, free: true }];
+    expect(profitCents([o({ lines })])).toBe(78 - 90);
+  });
 });

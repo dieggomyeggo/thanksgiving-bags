@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS: Settings = {
   farDeliveryCents: 500,
   packagingLb: 0.5,
   minItems: 3,
+  freeItemCount: 2,
   largeOrderItems: 20,
   unpaidExpiryHours: 48,
   charityName: null,

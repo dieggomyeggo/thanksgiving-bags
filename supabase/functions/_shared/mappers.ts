@@ -68,7 +68,7 @@ export function orderFromRow(r: Row, lines: Row[] = []): OrderRow {
 }
 
 export function lineFromRow(r: Row): OrderLine {
-  return { itemId: r['item_id'], qty: r['qty'], unitPriceCents: r['unit_price_cents'], unitCostCents: r['unit_cost_cents'] };
+  return { itemId: r['item_id'], qty: r['qty'], unitPriceCents: r['unit_price_cents'], unitCostCents: r['unit_cost_cents'], free: !!r['free'] };
 }
 
 /** Patch an admin can apply to an order (camelCase -> snake_case). */

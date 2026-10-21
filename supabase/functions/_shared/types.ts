@@ -81,6 +81,7 @@ export interface Settings {
   farDeliveryCents: number;
   packagingLb: number;
   minItems: number;
+  freeItemCount: number; // free non-Amway extras per order, customer's choice
   largeOrderItems: number; // an order with MORE than this many items needs owner approval
   unpaidExpiryHours: number;
   charityName: string | null; // null until written permission is on file
@@ -110,6 +111,8 @@ export interface OrderLine {
   qty: number;
   unitPriceCents: number;
   unitCostCents: number;
+  /** One of the free non-Amway extras that come with every order (price 0, owner pays cost). */
+  free?: boolean;
 }
 
 export interface OrderRow {

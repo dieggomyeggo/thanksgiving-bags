@@ -2,7 +2,10 @@ import { ChangeDetectionStrategy, Component, inject, output } from '@angular/cor
 import { MatBadge } from '@angular/material/badge';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent } from '@angular/material/card';
+import { FormsModule } from '@angular/forms';
 import { MatDivider } from '@angular/material/divider';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatOption, MatSelect } from '@angular/material/select';
 import { money } from '../core/format';
 import { BagStore } from './bag.store';
 import { CheckoutForm } from './checkout-form';
@@ -10,7 +13,7 @@ import { QtyStepper } from './qty-stepper';
 
 @Component({
   selector: 'app-bag-panel',
-  imports: [MatCard, MatCardContent, MatDivider, MatButton, MatBadge, QtyStepper, CheckoutForm],
+  imports: [FormsModule, MatCard, MatCardContent, MatDivider, MatButton, MatBadge, MatFormField, MatLabel, MatSelect, MatOption, QtyStepper, CheckoutForm],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <mat-card appearance="outlined" id="bag">
@@ -27,7 +30,20 @@ import { QtyStepper } from './qty-stepper';
         } @empty {
           <p class="muted">Your bag is empty. Pick a theme or add items from a shelf.</p>
         }
-        <p class="muted small">Every bag includes a free handwritten thank-you card.</p>
+        <p class="muted small">Every order includes a free handwritten thank-you card.</p>
+
+        <div class="free" role="group" aria-labelledby="free-h">
+          <b id="free-h">Your {{ s.settings().freeItemCount }} free extras (non-Amway, your choice)</b>
+          @for (slot of s.freeSlots(); track $index) {
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Free extra {{ $index + 1 }}</mat-label>
+              <mat-select [ngModel]="slot" (ngModelChange)="pickFree($index, $event)" [name]="'free' + $index">
+                <mat-option value="">Choose…</mat-option>
+                @for (o of s.freeOptions(); track o.id) { <mat-option [value]="o.id">{{ o.name }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+          }
+        </div>
 
         <div class="totals" aria-live="polite">
           <div class="row"><span>Items ({{ s.count() }})</span><span>{{ m(s.subtotal()) }}</span></div>
@@ -63,6 +79,7 @@ import { QtyStepper } from './qty-stepper';
     .line { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .ln { flex: 1; }
     .small { font-size: 12px; }
+    .free { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; padding: 10px; border-radius: 12px; background: var(--mat-sys-surface-container-high); }
     .totals { border-top: 1px solid var(--mat-sys-outline-variant); margin: 8px 0; padding-top: 8px; }
     .total { margin-top: 4px; }
     mat-divider { margin: 12px 0; }
@@ -74,4 +91,13 @@ export class BagPanel {
   protected readonly s = inject(BagStore);
   protected readonly m = money;
   readonly place = output<void>();
+
+  protected pickFree(i: number, id: string): void {
+    this.s.freePicks.set(this.withSlot(i, id));
+  }
+  private withSlot(i: number, id: string): string[] {
+    const next = [...this.s.freeSlots()];
+    next[i] = id;
+    return next;
+  }
 }

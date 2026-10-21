@@ -19,7 +19,7 @@ import { BagStore } from './bag.store';
           <mat-card-content>
             <div class="notice"><b>Order {{ o.number }}</b></div>
             @for (l of o.lines; track l.name) {
-              <div class="row"><span>{{ l.qty }}× {{ l.name }}</span><span>{{ m(l.totalCents) }}</span></div>
+              <div class="row"><span>{{ l.qty }}× {{ l.name }}</span><span>{{ l.free ? 'FREE' : m(l.totalCents) }}</span></div>
             }
             <div class="row"><span>Items</span><span>{{ m(o.subtotalCents) }}</span></div>
             <div class="row"><span>Delivery/shipping</span><span>{{ o.shippingQuoteNeeded ? 'to be quoted' : m(o.shippingCents) }}</span></div>

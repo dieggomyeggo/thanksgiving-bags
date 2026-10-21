@@ -13,7 +13,7 @@ export interface Confirmation {
   name: string;
   payMethod: PayMethod;
   method: Method;
-  lines: { name: string; qty: number; totalCents: number }[];
+  lines: { name: string; qty: number; totalCents: number; free?: boolean }[];
   subtotalCents: number;
   shippingCents: number;
   totalCents: number;
@@ -36,6 +36,8 @@ export class BagStore {
   readonly loadError = signal<string | null>(null);
 
   readonly lines = signal<Record<string, number>>({});
+  /** Customer's free non-Amway extras: one slot per free item ('' = not chosen yet). */
+  readonly freePicks = signal<string[]>(['', '']);
   readonly method = signal<Method>('deliver');
   readonly zip = signal('');
   readonly address = signal('');
@@ -56,9 +58,27 @@ export class BagStore {
     for (const i of [...this.catalog()].sort((a, b) => a.sort - b.sort)) if (!order.includes(i.shelf)) order.push(i.shelf);
     return order;
   });
+  readonly freeOptions = computed(() => this.catalog().filter((i) => i.kind === 'other').sort((a, b) => a.sort - b.sort));
+  readonly freeSlots = computed(() => Array.from({ length: this.settings().freeItemCount }, (_, i) => this.freePicks()[i] ?? ''));
+  readonly freeItems = computed(() => {
+    const out: Record<string, number> = {};
+    for (const id of this.freeSlots()) if (id) out[id] = (out[id] ?? 0) + 1;
+    return out;
+  });
+  readonly freeLines = computed(() =>
+    Object.entries(this.freeItems()).flatMap(([id, qty]) => {
+      const item = this.catalog().find((i) => i.id === id);
+      return item ? [{ item, qty }] : [];
+    }),
+  );
   readonly count = computed(() => countItems(this.lines()));
   readonly subtotal = computed(() => subtotalCents(this.lines(), this.cartItems()));
-  readonly weight = computed(() => weightLb(this.lines(), this.cartItems(), this.settings().packagingLb));
+  private readonly mergedLines = computed(() => {
+    const out = { ...this.lines() };
+    for (const [k, v] of Object.entries(this.freeItems())) out[k] = (out[k] ?? 0) + v;
+    return out;
+  });
+  readonly weight = computed(() => weightLb(this.mergedLines(), this.cartItems(), this.settings().packagingLb));
   readonly zone = computed(() => (this.method() === 'deliver' ? zoneFor(this.zip(), this.zips()) : null));
   readonly quote = computed(() => quoteShipping({ method: this.method(), zone: this.zone(), weightLb: this.weight(), settings: this.settings() }));
   readonly shipping = computed(() => this.quote().cents ?? 0);
@@ -77,6 +97,7 @@ export class BagStore {
     const p: string[] = [];
     const min = this.settings().minItems;
     if (this.count() < min) p.push(`Add at least ${min} items (${this.count()} so far).`);
+    if (this.freeLines().reduce((a, l) => a + l.qty, 0) < this.settings().freeItemCount) p.push(`Choose your ${this.settings().freeItemCount} free extras.`);
     if (!this.name().trim()) p.push('Name needed.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(this.email().trim())) p.push('A valid email is needed.');
     if (this.method() !== 'pickup') {
@@ -100,6 +121,7 @@ export class BagStore {
       this.zips.set(zips);
       // Drop anything that disappeared (sold out) since the bag was built.
       this.lines.update((l) => Object.fromEntries(Object.entries(l).filter(([id]) => catalog.some((c) => c.id === id))));
+      this.freePicks.update((p) => p.map((id) => (catalog.some((c) => c.id === id && c.kind === 'other') ? id : '')));
       this.loadError.set(null);
     } catch (e) {
       this.loadError.set(e instanceof Error ? e.message : 'Could not load the catalog.');
@@ -140,12 +162,15 @@ export class BagStore {
     this.placing.set(true);
     this.placeError.set(null);
     const snapshot = {
-      lines: this.bagLines().map((l) => ({ name: l.item.name, qty: l.qty, totalCents: l.qty * l.item.unitPriceCents })),
+      lines: [
+        ...this.bagLines().map((l) => ({ name: l.item.name, qty: l.qty, totalCents: l.qty * l.item.unitPriceCents })),
+        ...this.freeLines().map((l) => ({ name: l.item.name, qty: l.qty, totalCents: 0, free: true })),
+      ],
       name: this.name().trim(), payMethod: this.payMethod(), method: this.method(),
     };
     try {
       const r = await this.api.placeOrder({
-        items: this.lines(), method: this.method(), zip: this.method() === 'pickup' ? null : this.zip().trim() || null,
+        items: this.lines(), freeItems: this.freeItems(), method: this.method(), zip: this.method() === 'pickup' ? null : this.zip().trim() || null,
         address: this.method() === 'pickup' ? null : this.address().trim() || null, name: this.name().trim(),
         email: this.email().trim(), phone: this.phone().trim() || null, payMethod: this.payMethod(),
         optFollowup: this.optFollowup(), optShoutout: this.optShoutout(), notes: null, website: this.website(),
@@ -154,6 +179,7 @@ export class BagStore {
       if (r.ok) {
         this.confirmation.set({ ...snapshot, number: r.number, subtotalCents: r.subtotalCents, shippingCents: r.shippingCents, totalCents: r.totalCents, late: r.late, needsApproval: r.needsApproval, shippingQuoteNeeded: r.shippingQuoteNeeded });
         this.clear();
+        this.freePicks.set(['', '']);
       } else {
         this.placeError.set(this.describeError(r));
         if (r.error === 'price_changed') await this.load();

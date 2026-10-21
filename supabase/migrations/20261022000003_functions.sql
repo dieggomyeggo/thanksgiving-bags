@@ -18,8 +18,9 @@ begin
     (o ->> 'test')::boolean, o ->> 'client_hash'
   ) returning id into new_id;
 
-  insert into public.order_items (order_id, item_id, qty, unit_price_cents, unit_cost_cents)
-  select new_id, l ->> 'item_id', (l ->> 'qty')::int, (l ->> 'unit_price_cents')::int, (l ->> 'unit_cost_cents')::int
+  insert into public.order_items (order_id, item_id, qty, unit_price_cents, unit_cost_cents, free)
+  select new_id, l ->> 'item_id', (l ->> 'qty')::int, (l ->> 'unit_price_cents')::int, (l ->> 'unit_cost_cents')::int,
+         coalesce((l ->> 'free')::boolean, false)
   from jsonb_array_elements(lines) as l;
 
   return new_id;

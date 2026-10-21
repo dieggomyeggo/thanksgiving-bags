@@ -1,12 +1,13 @@
 // Core of the place-order Edge Function. The server recomputes every price, the shipping tier and lateness
 // from the database; nothing the browser sends about money is trusted.
-import { countItems, isLargeOrder, subtotalCents, validateCart, weightLb, type CartItem } from './cart.ts';
+import { countItems, isLargeOrder, subtotalCents, validateCart, validateFreeItems, weightLb, type CartItem } from './cart.ts';
 import { DuplicateNumberError, type Mailer, type ServerDb } from './db.ts';
 import { renderEmail } from './emails.ts';
 import { isLate } from './cutoffs.ts';
 import { validateOrderInput } from './order-input.ts';
 import { orderNumber } from './orders.ts';
 import { quoteShipping, type LocalZone } from './shipping.ts';
+import type { OrderLine } from './types.ts';
 import { zoneFor } from './zip.ts';
 
 export interface PlaceOrderDeps {
@@ -24,6 +25,11 @@ export interface HttpResult {
 }
 
 const RATE_LIMIT = 5; // orders per client or email per hour
+function mergeLines(a: Record<string, number>, b: Record<string, number>): Record<string, number> {
+  const out = { ...a };
+  for (const [k, v] of Object.entries(b)) out[k] = (out[k] ?? 0) + v;
+  return out;
+}
 const fail = (status: number, error: string, extra: Record<string, unknown> = {}): HttpResult => ({ status, body: { ok: false, error, ...extra } });
 
 export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Promise<HttpResult> {
@@ -40,11 +46,12 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
 
   const [items, settings, zips] = await Promise.all([deps.db.getItems(), deps.db.getSettings(), deps.db.getZips()]);
   const catalog: (CartItem & { costCents: number; name: string })[] = items.map((i) => ({
-    id: i.id, unitPriceCents: i.unitPriceCents, weightLb: i.weightLb, costCents: i.costCents, name: i.name,
+    id: i.id, unitPriceCents: i.unitPriceCents, weightLb: i.weightLb, costCents: i.costCents, name: i.name, kind: i.kind,
     available: i.active && !i.soldOut && (i.stock === null || i.stock > 0),
   }));
 
   const problems: { code: string; itemId?: string }[] = validateCart(input.items, catalog, settings);
+  problems.push(...validateFreeItems(input.freeItems, catalog, settings));
   for (const [id, qty] of Object.entries(input.items)) {
     const it = items.find((i) => i.id === id);
     if (it && it.stock !== null && qty > it.stock && it.stock > 0) problems.push({ code: 'insufficient_stock', itemId: id });
@@ -59,7 +66,7 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
 
   const count = countItems(input.items);
   const subtotal = subtotalCents(input.items, catalog);
-  const quote = quoteShipping({ method: input.method, zone, weightLb: weightLb(input.items, catalog, settings.packagingLb), settings });
+  const quote = quoteShipping({ method: input.method, zone, weightLb: weightLb({ ...mergeLines(input.items, input.freeItems) }, catalog, settings.packagingLb), settings });
   if (quote.kind === 'blocked' || quote.kind === 'needs_zip') return fail(422, 'invalid', { details: [{ code: 'out_of_area' }] });
   const shippingQuoteNeeded = quote.kind === 'quote';
   const shipping = quote.cents ?? 0;
@@ -71,10 +78,16 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
   }
 
   const late = isLate(input.method, now, settings);
-  const lines = Object.entries(input.items).map(([itemId, qty]) => {
-    const it = catalog.find((c) => c.id === itemId)!;
-    return { itemId, qty, unitPriceCents: it.unitPriceCents, unitCostCents: it.costCents };
-  });
+  const lines: OrderLine[] = [
+    ...Object.entries(input.items).map(([itemId, qty]) => {
+      const it = catalog.find((c) => c.id === itemId)!;
+      return { itemId, qty, unitPriceCents: it.unitPriceCents, unitCostCents: it.costCents };
+    }),
+    ...Object.entries(input.freeItems).map(([itemId, qty]) => {
+      const it = catalog.find((c) => c.id === itemId)!;
+      return { itemId, qty, unitPriceCents: 0, unitCostCents: it.costCents, free: true };
+    }),
+  ];
 
   let number = '';
   let id = '';
@@ -97,7 +110,7 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
   try {
     const mail = renderEmail('placed', {
       number, name: input.name, method: input.method, payMethod: input.payMethod,
-      lines: lines.map((l) => ({ name: catalog.find((c) => c.id === l.itemId)!.name, qty: l.qty, totalCents: l.qty * l.unitPriceCents })),
+      lines: lines.map((l) => ({ name: catalog.find((c) => c.id === l.itemId)!.name, qty: l.qty, totalCents: l.qty * l.unitPriceCents, free: l.free })),
       subtotalCents: subtotal, shippingCents: shipping, totalCents: total, shippingQuoteNeeded, needsApproval, late,
       tracking: null, readyWindow: null,
     }, settings);

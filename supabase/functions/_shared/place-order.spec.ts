@@ -15,9 +15,10 @@ let sent: Mail[];
 let deps: PlaceOrderDeps;
 
 const P = (id: string) => SEED_ITEMS.find((i) => i.id === id)!.unitPriceCents;
+const FREE = { 'hot-cocoa': 1, 'apple-cider': 1 };
 const bag = { 'xs-energy-can': 2, 'honey-stick': 1 }; // 3 items
 const base = (over: Record<string, unknown> = {}) => ({
-  items: bag, method: 'pickup', payMethod: 'zelle', name: 'Pat Doe', email: 'pat@example.com',
+  items: bag, freeItems: FREE, method: 'pickup', payMethod: 'zelle', name: 'Pat Doe', email: 'pat@example.com',
   expectedTotalCents: 2 * P('xs-energy-can') + P('honey-stick'), website: '', ...over,
 });
 
@@ -173,5 +174,46 @@ describe('handlePlaceOrder', () => {
   it('rejects malformed input without throwing', async () => {
     expect((await handlePlaceOrder(null, deps)).status).toBe(422);
     expect((await handlePlaceOrder({ items: 5 }, deps)).status).toBe(422);
+  });
+
+  describe('free extras', () => {
+    it('stores two free non-Amway extras at $0 with the owner cost snapshotted; total unchanged', async () => {
+      const r = await handlePlaceOrder(base(), deps);
+      expect(r.body).toMatchObject({ ok: true, totalCents: 2 * P('xs-energy-can') + P('honey-stick') });
+      const free = db.orders[0].lines.filter((l) => l.free);
+      expect(free.map((l) => [l.itemId, l.unitPriceCents, l.unitCostCents])).toEqual([['hot-cocoa', 0, 45], ['apple-cider', 0, 45]]);
+      expect(sent[0].text).toContain('FREE');
+    });
+    it('requires exactly two (units), not one or three', async () => {
+      for (const f of [{}, { 'hot-cocoa': 1 }, { 'hot-cocoa': 3 }]) {
+        const r = await handlePlaceOrder(base({ freeItems: f }), deps);
+        expect(r.status).toBe(422);
+        expect(JSON.stringify(r.body)).toContain('bad_free');
+      }
+    });
+    it('allows two of the same extra', async () => {
+      expect((await handlePlaceOrder(base({ freeItems: { 'hot-cocoa': 2 } }), deps)).status).toBe(200);
+    });
+    it('rejects Amway, unknown and sold-out items as extras', async () => {
+      for (const f of [{ 'xs-energy-can': 1, 'hot-cocoa': 1 }, { nope: 1, 'hot-cocoa': 1 }]) {
+        expect((await handlePlaceOrder(base({ freeItems: f }), deps)).status).toBe(422);
+      }
+      db.items.find((i) => i.id === 'apple-cider')!.soldOut = true;
+      expect((await handlePlaceOrder(base(), deps)).status).toBe(422);
+    });
+    it('extras do not count toward the 3-item minimum or the large-order limit', async () => {
+      const r = await handlePlaceOrder(base({ items: { 'xs-energy-can': 2 }, expectedTotalCents: null }), deps);
+      expect(JSON.stringify(r.body)).toContain('too_few');
+      const twenty = await handlePlaceOrder(base({ items: { 'honey-stick': 20 }, expectedTotalCents: 20 * P('honey-stick') }), deps);
+      expect(twenty.body).toMatchObject({ needsApproval: false });
+    });
+    it('extras count toward shipping weight', async () => {
+      // 8 lb boundary: 3 dish drops 6.9 + packaging 0.5 = 7.4; +2 hand-warmer-weight extras (0.1 each) stays under, so push over with 1 more drop
+      const items = { 'dish-drops': 3, 'honey-stick': 3 }; // 6.9 + .15 + .5 = 7.55
+      const ok = await handlePlaceOrder(base({ method: 'ship', zip: '60601', address: 'x', items, freeItems: FREE, expectedTotalCents: 3 * P('dish-drops') + 3 * P('honey-stick') + 2200 }), deps);
+      expect(ok.body).toMatchObject({ shippingCents: 2200, shippingQuoteNeeded: false });
+      const over = await handlePlaceOrder(base({ method: 'ship', zip: '60601', address: 'x', items: { 'dish-drops': 3, 'honey-stick': 3, 'xs-energy-can': 1 }, freeItems: FREE, expectedTotalCents: null }), deps);
+      expect(over.body).toMatchObject({ shippingQuoteNeeded: true });
+    });
   });
 });

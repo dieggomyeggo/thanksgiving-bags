@@ -31,7 +31,7 @@ export type OrderDialogResult = Partial<OrderRow> | null;
           {{ o.address ?? '' }} {{ o.zip ?? '' }}
         </p>
         <ul class="lines">
-          @for (l of o.lines; track l.itemId) { <li>{{ l.qty }}× {{ name(l.itemId) }} <span class="muted">{{ m(l.unitPriceCents) }} ea, cost {{ m(l.unitCostCents) }}</span></li> }
+          @for (l of o.lines; track l.itemId) { <li>{{ l.qty }}× {{ name(l.itemId) }} <span class="muted">{{ l.free ? 'FREE extra' : m(l.unitPriceCents) + ' ea' }}, cost {{ m(l.unitCostCents) }}</span></li> }
         </ul>
         <p>Items {{ m(o.subtotalCents) }} · shipping {{ o.shippingQuoteNeeded ? 'TO QUOTE' : m(o.shippingCents) }} · total {{ m(o.totalCents) }}
           {{ o.optFollowup ? '· follow-up OK' : '' }} {{ o.optShoutout ? '· announce name OK' : '' }}</p>

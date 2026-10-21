@@ -101,5 +101,6 @@ create table public.order_items (
   qty integer not null check (qty > 0),
   unit_price_cents integer not null,
   unit_cost_cents integer not null, -- snapshot; admin-only
-  primary key (order_id, item_id)
+  free boolean not null default false, -- free non-Amway extra (price 0, owner pays cost)
+  primary key (order_id, item_id, free)
 );

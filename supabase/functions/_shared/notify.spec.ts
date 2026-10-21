@@ -14,7 +14,7 @@ beforeEach(async () => {
   db = new MemoryDb({ items: SEED_ITEMS, zips: [] });
   sent = [];
   const p = SEED_ITEMS.find((i) => i.id === 'honey-stick')!.unitPriceCents;
-  await handlePlaceOrder({ items: { 'honey-stick': 3 }, method: 'ship', zip: '50131', address: '1 Main', payMethod: 'zelle', name: 'Pat', email: 'pat@example.com', expectedTotalCents: 3 * p + 1100 },
+  await handlePlaceOrder({ items: { 'honey-stick': 3 }, freeItems: { 'hot-cocoa': 2 }, method: 'ship', zip: '50131', address: '1 Main', payMethod: 'zelle', name: 'Pat', email: 'pat@example.com', expectedTotalCents: 3 * p + 1100 },
     { db, mailer: { async send() {} }, now: () => new Date('2026-11-02T12:00:00Z'), rng: Math.random, clientHash: 'h' });
   id = db.orders[0].id;
 });

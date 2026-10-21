@@ -11,6 +11,7 @@ describe('BagStore (on the mock API)', () => {
     store = TestBed.inject(BagStore);
     await store.load();
     store.method.set('pickup');
+    store.freePicks.set(['hot-cocoa', 'apple-cider']);
   });
 
   it('loads shelves, starters and public items without any cost fields', () => {
@@ -75,5 +76,26 @@ describe('BagStore (on the mock API)', () => {
     const r = await store.place();
     expect(r.ok).toBe(false);
     expect(store.confirmation()).toBeNull();
+  });
+
+  it('needs both free extras chosen and only offers non-Amway items', () => {
+    store.setQty('honey-stick', 3);
+    store.name.set('Pat');
+    store.email.set('pat@example.com');
+    expect(store.freeOptions().every((i) => i.kind === 'other')).toBe(true);
+    expect(store.problems()).toEqual([]);
+    store.freePicks.set(['hot-cocoa', '']);
+    expect(store.problems().join(' ')).toContain('Choose your 2 free extras');
+  });
+
+  it('free extras add no cost but are sent and shown on the confirmation', async () => {
+    store.setQty('honey-stick', 3);
+    store.name.set('Pat');
+    store.email.set('pat@example.com');
+    const before = store.total();
+    expect(store.freeLines().length).toBe(2);
+    const r = await store.place();
+    expect(r.ok && r.totalCents).toBe(before);
+    expect(store.confirmation()?.lines.filter((l) => l.free).length).toBe(2);
   });
 });

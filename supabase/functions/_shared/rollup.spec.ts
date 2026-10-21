@@ -60,4 +60,8 @@ describe('buildRollup', () => {
     expect(r.text).toContain('2 box(es) x 12  XS Energy 12 oz can');
     expect(r.text).toContain('1 box(es) x 20  Ginger Mint tea bag');
   });
+  it('free extras are included in the buy-elsewhere list', () => {
+    const r = buildRollup([o({ lines: [{ itemId: 'cocoa', qty: 2 }] }), o({ lines: [{ itemId: 'cocoa', qty: 2 }] })], items);
+    expect(r.rows[0]).toMatchObject({ itemId: 'cocoa', units: 4 });
+  });
 });

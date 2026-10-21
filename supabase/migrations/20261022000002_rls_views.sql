@@ -58,7 +58,7 @@ select key, value
 from public.settings
 where key in (
   'cutoffShip', 'cutoffLocal', 'orderingCloses', 'shipTiers', 'farDeliveryCents', 'packagingLb',
-  'minItems', 'largeOrderItems', 'unpaidExpiryHours', 'charityName', 'ownerFirstName',
+  'minItems', 'freeItemCount', 'largeOrderItems', 'unpaidExpiryHours', 'charityName', 'ownerFirstName',
   'contactEmail', 'contactPhone', 'payments', 'learnMoreUrl', 'pickupNote', 'totals'
 );
 
