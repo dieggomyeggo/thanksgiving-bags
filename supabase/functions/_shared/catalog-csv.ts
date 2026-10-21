@@ -3,7 +3,7 @@
 //
 // Conventions (also in README): "YOUR IBO cost", "PV", "BV" and "Est. retail" are PER BOX as on the price list;
 // they are divided by "Units per box" (column 4, owner fills it in). Non-Amway rows are per unit.
-import { SHELVES } from './seed-catalog.ts';
+import { SHELVES } from './shelves.ts';
 import { unitPriceCents } from './pricing.ts';
 import type { ItemRow, ItemTags } from './types.ts';
 

@@ -1,1 +1,47 @@
-/* You can add global styles to this file, and also import other style files */
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light dark;
+  @include mat.theme((
+    color: (
+      theme-type: color-scheme,
+      primary: mat.$orange-palette,
+      tertiary: mat.$green-palette,
+    ),
+    typography: (plain-family: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif', brand-family: 'system-ui, sans-serif'),
+    density: 0,
+  ));
+  // Warm cream surfaces (light) and warm dark brown (dark).
+  --mat-sys-surface: light-dark(#fbf6ee, #1f1812);
+  --mat-sys-background: light-dark(#fbf6ee, #1f1812);
+  --mat-sys-surface-container: light-dark(#fffaf2, #2a2118);
+  --mat-sys-surface-container-low: light-dark(#fff8ee, #261e16);
+  --mat-sys-surface-container-high: light-dark(#f4ebdc, #33291e);
+  --mat-sys-on-surface: light-dark(#2a2118, #f1e9dd);
+  --mat-sys-on-surface-variant: light-dark(#5e5141, #cdbfae);
+  --mat-sys-outline-variant: light-dark(#dccfba, #4a3d2e);
+  --mat-sys-primary: light-dark(#9a4a1d, #f0a272);
+  --mat-sys-on-primary: light-dark(#ffffff, #3a1a05);
+  --mat-sys-primary-container: light-dark(#f6d9c2, #6a3412);
+  --mat-sys-on-primary-container: light-dark(#3a1a05, #fbe3d1);
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; margin: 0; }
+body {
+  font: 15px/1.5 var(--mat-sys-body-large-font, system-ui), system-ui, sans-serif;
+  background: var(--mat-sys-background);
+  color: var(--mat-sys-on-surface);
+}
+h1, h2, h3 { margin: 0 0 8px; font-weight: 600; }
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.25rem; }
+a { color: var(--mat-sys-primary); }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 16px; }
+.muted { color: var(--mat-sys-on-surface-variant); }
+.row { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+.notice { border-radius: 12px; padding: 10px 14px; margin: 10px 0; background: var(--mat-sys-primary-container); color: var(--mat-sys-on-primary-container); }
+.notice.warn { background: light-dark(#f3e2b8, #4a3a14); color: light-dark(#4a3410, #f5e3b5); }
+.notice.err { background: light-dark(#f8d9d4, #5a2420); color: light-dark(#5a1d17, #fbd9d4); }
+.visually-hidden { position: absolute !important; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.hp { position: absolute; left: -9999px; height: 0; overflow: hidden; } // honeypot field

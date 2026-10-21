@@ -4,15 +4,7 @@
 import { unitPriceCents } from './pricing.ts';
 import type { ItemRow, ItemTags, StarterBag } from './types.ts';
 
-export const SHELVES = [
-  'Energy & Fitness',
-  'Everyday Wellness',
-  'Warm Drinks & Tea',
-  'Pantry & Treats',
-  'Home & Kitchen',
-  'Personal Care',
-  'Cozy extras',
-] as const;
+export { SHELVES } from './shelves.ts';
 
 let sort = 0;
 function mk(
