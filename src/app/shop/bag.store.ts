@@ -58,7 +58,7 @@ export class BagStore {
     for (const i of [...this.catalog()].sort((a, b) => a.sort - b.sort)) if (!order.includes(i.shelf)) order.push(i.shelf);
     return order;
   });
-  readonly freeOptions = computed(() => this.catalog().filter((i) => i.kind === 'other').sort((a, b) => a.sort - b.sort));
+  readonly freeOptions = computed(() => this.catalog().filter((i) => i.kind === 'other' && i.shelf === this.settings().freeShelf).sort((a, b) => a.sort - b.sort));
   readonly freeSlots = computed(() => Array.from({ length: this.settings().freeItemCount }, (_, i) => this.freePicks()[i] ?? ''));
   readonly freeItems = computed(() => {
     const out: Record<string, number> = {};
@@ -121,7 +121,7 @@ export class BagStore {
       this.zips.set(zips);
       // Drop anything that disappeared (sold out) since the bag was built.
       this.lines.update((l) => Object.fromEntries(Object.entries(l).filter(([id]) => catalog.some((c) => c.id === id))));
-      this.freePicks.update((p) => p.map((id) => (catalog.some((c) => c.id === id && c.kind === 'other') ? id : '')));
+      this.freePicks.update((p) => p.map((id) => (catalog.some((c) => c.id === id && c.kind === 'other' && c.shelf === this.settings().freeShelf) ? id : '')));
       this.loadError.set(null);
     } catch (e) {
       this.loadError.set(e instanceof Error ? e.message : 'Could not load the catalog.');

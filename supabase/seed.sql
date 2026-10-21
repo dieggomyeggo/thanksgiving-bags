@@ -21,7 +21,9 @@ insert into public.items (id, shelf, name, kind, cost_cents, retail_cents, pv, b
   ('loc-cleaner', 'Home & Kitchen', 'L.O.C. multi-purpose cleaner, 1 L', 'amway', 1000, 1250, null, null, 2.3, 1, '{}'::jsonb, false, true, null, false, true, 18, 1300),
   ('satinique-2in1', 'Personal Care', 'Satinique 2-in-1 shampoo & conditioner', 'amway', 1120, 1400, null, null, 1.2, 1, '{}'::jsonb, false, true, null, false, true, 19, 1450),
   ('glister-toothpaste', 'Personal Care', 'Glister toothpaste tube', 'amway', 580, 725, null, null, 0.6, 1, '{}'::jsonb, false, true, null, false, true, 20, 750),
-  ('hand-warmer', 'Cozy extras', 'Hand warmer', 'other', 55, null, null, null, 0.1, 1, '{}'::jsonb, false, true, null, false, true, 21, 125)
+  ('hand-warmer', 'Cozy extras', 'Hand warmer', 'other', 55, null, null, null, 0.1, 1, '{}'::jsonb, false, true, null, false, true, 21, 125),
+  ('candy-cane', 'Cozy extras', 'Peppermint candy cane', 'other', 15, null, null, null, 0.05, 1, '{}'::jsonb, false, true, null, false, true, 22, 75),
+  ('tea-light', 'Cozy extras', 'Mini tea light candle', 'other', 60, null, null, null, 0.1, 1, '{}'::jsonb, false, true, null, false, true, 23, 125)
 on conflict (id) do update set shelf = excluded.shelf, name = excluded.name, kind = excluded.kind, cost_cents = excluded.cost_cents, retail_cents = excluded.retail_cents, pv = excluded.pv, bv = excluded.bv, weight_lb = excluded.weight_lb, box_size = excluded.box_size, tags = excluded.tags, tags_verified = excluded.tags_verified, individually_wrapped = excluded.individually_wrapped, stock = excluded.stock, sold_out = excluded.sold_out, active = excluded.active, sort = excluded.sort, unit_price_cents = excluded.unit_price_cents;
 
 insert into public.starter_bags (id, name, blurb, items, sort, active) values
@@ -76,6 +78,8 @@ insert into public.settings (key, value) values
   ('farDeliveryCents', '500'::jsonb),
   ('packagingLb', '0.5'::jsonb),
   ('minItems', '3'::jsonb),
+  ('freeShelf', '"Cozy extras"'::jsonb),
+  ('freeItemCount', '2'::jsonb),
   ('largeOrderItems', '20'::jsonb),
   ('unpaidExpiryHours', '48'::jsonb),
   ('charityName', 'null'::jsonb),

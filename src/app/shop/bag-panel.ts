@@ -33,7 +33,7 @@ import { QtyStepper } from './qty-stepper';
         <p class="muted small">Every order includes a free handwritten thank-you card.</p>
 
         <div class="free" role="group" aria-labelledby="free-h">
-          <b id="free-h">Your {{ s.settings().freeItemCount }} free extras (non-Amway, your choice)</b>
+          <b id="free-h">Your {{ s.settings().freeItemCount }} free extras (from Cozy extras, your choice)</b>
           @for (slot of s.freeSlots(); track $index) {
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
               <mat-label>Free extra {{ $index + 1 }}</mat-label>

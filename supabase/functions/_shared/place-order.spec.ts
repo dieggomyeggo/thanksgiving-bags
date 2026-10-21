@@ -15,7 +15,7 @@ let sent: Mail[];
 let deps: PlaceOrderDeps;
 
 const P = (id: string) => SEED_ITEMS.find((i) => i.id === id)!.unitPriceCents;
-const FREE = { 'hot-cocoa': 1, 'apple-cider': 1 };
+const FREE = { 'hand-warmer': 1, 'candy-cane': 1 };
 const bag = { 'xs-energy-can': 2, 'honey-stick': 1 }; // 3 items
 const base = (over: Record<string, unknown> = {}) => ({
   items: bag, freeItems: FREE, method: 'pickup', payMethod: 'zelle', name: 'Pat Doe', email: 'pat@example.com',
@@ -76,8 +76,8 @@ describe('handlePlaceOrder', () => {
 
   it('rejects unknown, sold-out and inactive items', async () => {
     db.items.find((i) => i.id === 'honey-stick')!.soldOut = true;
-    db.items.find((i) => i.id === 'hand-warmer')!.active = false;
-    const r = await handlePlaceOrder(base({ items: { 'xs-energy-can': 2, 'honey-stick': 1, 'hand-warmer': 1, nope: 1 }, expectedTotalCents: null }), deps);
+    db.items.find((i) => i.id === 'seasonal-treat')!.active = false;
+    const r = await handlePlaceOrder(base({ items: { 'xs-energy-can': 2, 'honey-stick': 1, 'seasonal-treat': 1, nope: 1 }, expectedTotalCents: null }), deps);
     expect(r.status).toBe(422);
     const s = JSON.stringify(r.body);
     expect(s).toContain('unavailable');
@@ -181,24 +181,24 @@ describe('handlePlaceOrder', () => {
       const r = await handlePlaceOrder(base(), deps);
       expect(r.body).toMatchObject({ ok: true, totalCents: 2 * P('xs-energy-can') + P('honey-stick') });
       const free = db.orders[0].lines.filter((l) => l.free);
-      expect(free.map((l) => [l.itemId, l.unitPriceCents, l.unitCostCents])).toEqual([['hot-cocoa', 0, 45], ['apple-cider', 0, 45]]);
+      expect(free.map((l) => [l.itemId, l.unitPriceCents, l.unitCostCents])).toEqual([['hand-warmer', 0, 55], ['candy-cane', 0, 15]]);
       expect(sent[0].text).toContain('FREE');
     });
     it('requires exactly two (units), not one or three', async () => {
-      for (const f of [{}, { 'hot-cocoa': 1 }, { 'hot-cocoa': 3 }]) {
+      for (const f of [{}, { 'hand-warmer': 1 }, { 'hand-warmer': 3 }]) {
         const r = await handlePlaceOrder(base({ freeItems: f }), deps);
         expect(r.status).toBe(422);
         expect(JSON.stringify(r.body)).toContain('bad_free');
       }
     });
     it('allows two of the same extra', async () => {
-      expect((await handlePlaceOrder(base({ freeItems: { 'hot-cocoa': 2 } }), deps)).status).toBe(200);
+      expect((await handlePlaceOrder(base({ freeItems: { 'hand-warmer': 2 } }), deps)).status).toBe(200);
     });
-    it('rejects Amway, unknown and sold-out items as extras', async () => {
-      for (const f of [{ 'xs-energy-can': 1, 'hot-cocoa': 1 }, { nope: 1, 'hot-cocoa': 1 }]) {
+    it('rejects Amway, unknown, other-shelf and sold-out items as extras', async () => {
+      for (const f of [{ 'xs-energy-can': 1, 'hand-warmer': 1 }, { nope: 1, 'hand-warmer': 1 }, { 'hot-cocoa': 1, 'hand-warmer': 1 }]) {
         expect((await handlePlaceOrder(base({ freeItems: f }), deps)).status).toBe(422);
       }
-      db.items.find((i) => i.id === 'apple-cider')!.soldOut = true;
+      db.items.find((i) => i.id === 'candy-cane')!.soldOut = true;
       expect((await handlePlaceOrder(base(), deps)).status).toBe(422);
     });
     it('extras do not count toward the 3-item minimum or the large-order limit', async () => {

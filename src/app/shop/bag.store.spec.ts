@@ -11,7 +11,7 @@ describe('BagStore (on the mock API)', () => {
     store = TestBed.inject(BagStore);
     await store.load();
     store.method.set('pickup');
-    store.freePicks.set(['hot-cocoa', 'apple-cider']);
+    store.freePicks.set(['hand-warmer', 'candy-cane']);
   });
 
   it('loads shelves, starters and public items without any cost fields', () => {
@@ -82,9 +82,10 @@ describe('BagStore (on the mock API)', () => {
     store.setQty('honey-stick', 3);
     store.name.set('Pat');
     store.email.set('pat@example.com');
-    expect(store.freeOptions().every((i) => i.kind === 'other')).toBe(true);
+    expect(store.freeOptions().every((i) => i.kind === 'other' && i.shelf === 'Cozy extras')).toBe(true);
+    expect(store.freeOptions().map((i) => i.id)).not.toContain('hot-cocoa');
     expect(store.problems()).toEqual([]);
-    store.freePicks.set(['hot-cocoa', '']);
+    store.freePicks.set(['hand-warmer', '']);
     expect(store.problems().join(' ')).toContain('Choose your 2 free extras');
   });
 

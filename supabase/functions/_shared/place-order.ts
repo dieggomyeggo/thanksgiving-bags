@@ -46,7 +46,7 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
 
   const [items, settings, zips] = await Promise.all([deps.db.getItems(), deps.db.getSettings(), deps.db.getZips()]);
   const catalog: (CartItem & { costCents: number; name: string })[] = items.map((i) => ({
-    id: i.id, unitPriceCents: i.unitPriceCents, weightLb: i.weightLb, costCents: i.costCents, name: i.name, kind: i.kind,
+    id: i.id, unitPriceCents: i.unitPriceCents, weightLb: i.weightLb, costCents: i.costCents, name: i.name, kind: i.kind, shelf: i.shelf,
     available: i.active && !i.soldOut && (i.stock === null || i.stock > 0),
   }));
 

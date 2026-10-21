@@ -49,6 +49,8 @@ export const SEED_ITEMS: ItemRow[] = [
   mk('satinique-2in1', 'Personal Care', 'Satinique 2-in-1 shampoo & conditioner', 'amway', 1120, 1400, 1.2, 1),
   mk('glister-toothpaste', 'Personal Care', 'Glister toothpaste tube', 'amway', 580, 725, 0.6, 1),
   mk('hand-warmer', 'Cozy extras', 'Hand warmer', 'other', 55, null, 0.1, 1),
+  mk('candy-cane', 'Cozy extras', 'Peppermint candy cane', 'other', 15, null, 0.05, 1),
+  mk('tea-light', 'Cozy extras', 'Mini tea light candle', 'other', 60, null, 0.1, 1),
 ];
 
 export const SEED_STARTERS: StarterBag[] = [

@@ -81,6 +81,7 @@ export interface Settings {
   farDeliveryCents: number;
   packagingLb: number;
   minItems: number;
+  freeShelf: string; // shelf the free extras come from
   freeItemCount: number; // free non-Amway extras per order, customer's choice
   largeOrderItems: number; // an order with MORE than this many items needs owner approval
   unpaidExpiryHours: number;

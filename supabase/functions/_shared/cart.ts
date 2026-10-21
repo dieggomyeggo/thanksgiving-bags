@@ -8,6 +8,7 @@ export interface CartItem {
   weightLb: number;
   available: boolean;
   kind?: 'amway' | 'other';
+  shelf?: string;
 }
 
 export interface CartError {
@@ -41,14 +42,14 @@ export function isLargeOrder(count: number, s: Pick<Settings, 'largeOrderItems'>
   return count > s.largeOrderItems;
 }
 
-/** The free extras: exactly `freeItemCount` units, each an available non-Amway item. */
-export function validateFreeItems(free: CartLines, catalog: CartItem[], s: Pick<Settings, 'freeItemCount'>): CartError[] {
+/** The free extras: exactly `freeItemCount` units, each an available non-Amway item from the free shelf (Cozy extras). */
+export function validateFreeItems(free: CartLines, catalog: CartItem[], s: Pick<Settings, 'freeItemCount' | 'freeShelf'>): CartError[] {
   const errors: CartError[] = [];
   const by = new Map(catalog.map((i) => [i.id, i]));
   for (const [id, q] of Object.entries(free)) {
     const it = by.get(id);
     if (!Number.isInteger(q) || q < 1) errors.push({ code: 'bad_free', itemId: id });
-    else if (!it || !it.available || it.kind !== 'other') errors.push({ code: 'bad_free', itemId: id });
+    else if (!it || !it.available || it.kind !== 'other' || it.shelf !== s.freeShelf) errors.push({ code: 'bad_free', itemId: id });
   }
   if (countItems(free) !== s.freeItemCount) errors.push({ code: 'bad_free' });
   return errors;
