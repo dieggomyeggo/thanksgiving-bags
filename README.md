@@ -15,7 +15,7 @@ npm run build:pages       # production build for GitHub Pages (base href /thanks
 ```
 Mock mode: `/admin-login` signs in as any email. `?today=2026-11-10` simulates a date for cutoff notices (mock/test builds only; the real server always uses real time). Orders and emails live only in the browser tab (emails are logged to the console).
 
-Real backend: `supabase start`, then `npm run gen:seed` is already applied via `supabase/seed.sql`; set the Supabase URL and anon key in `src/environments/environment.testproject.ts` (test) or `environment.prod.ts` (prod) and run `ng serve -c test`. `ng build -c test|production` swaps in the Supabase `ApiService` (the mock and its seed data, which contains item costs, are not in those bundles).
+Real backend: `supabase start` (applies the migrations and `supabase/seed.sql`, regenerate it with `npm run gen:seed`); set the Supabase URL and anon key in `src/environments/environment.testproject.ts` (test) or `environment.prod.ts` (prod) and run `ng serve -c test`. `ng build -c test|production` swaps in the Supabase `ApiService` (the mock and its seed data, which contains item costs, are not in those bundles).
 
 ## Layout
 - `supabase/functions/_shared/`: pure TypeScript shared by browser and server (`pricing`, `cart`, `shipping`, `cutoffs`, `zip`, `rollup`, `donation`, `orders`, `emails`, order validation) and the Edge Function cores (`place-order`, `notify`, `maintenance`). Angular imports them via `@shared/*`. Specs sit beside them.
