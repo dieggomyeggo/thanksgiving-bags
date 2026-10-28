@@ -59,7 +59,7 @@ export const SEED_STARTERS: StarterBag[] = [
   { id: 'busy-mom', name: 'Busy Mom', blurb: 'Quick wins between everything', sort: 2,
     items: { 'twist-tube': 2, 'xs-cocowater': 1, 'immunity-pack': 1, 'chamomile-tea': 1, 'hot-cocoa': 1 } },
   { id: 'golden-years', name: 'Golden Years', blurb: 'Gentle, low caffeine', sort: 3,
-    items: { 'ginger-mint-tea': 2, 'fiber-stick': 1, 'honey-stick': 2, 'hand-warmer': 1, 'hot-cocoa': 1 } },
+    items: { 'ginger-mint-tea': 2, 'fiber-stick': 1, 'honey-stick': 2, 'apple-cider': 1, 'hot-cocoa': 1 } },
   { id: 'thanksgiving-table', name: 'Thanksgiving Table', blurb: 'Warm and festive', sort: 4,
     items: { 'apple-cider': 2, 'hot-cocoa': 1, 'seasonal-treat': 1, 'ginger-mint-tea': 1, 'xs-cocowater': 1 } },
 ];

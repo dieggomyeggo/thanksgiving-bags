@@ -12,7 +12,7 @@ export interface CartItem {
 }
 
 export interface CartError {
-  code: 'too_few' | 'unknown_item' | 'unavailable' | 'bad_qty' | 'bad_free';
+  code: 'too_few' | 'unknown_item' | 'unavailable' | 'bad_qty' | 'bad_free' | 'free_only';
   itemId?: string;
 }
 

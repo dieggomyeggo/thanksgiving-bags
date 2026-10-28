@@ -201,6 +201,11 @@ describe('handlePlaceOrder', () => {
       db.items.find((i) => i.id === 'candy-cane')!.soldOut = true;
       expect((await handlePlaceOrder(base(), deps)).status).toBe(422);
     });
+    it('the gift shelf cannot be bought as a paid item', async () => {
+      const r = await handlePlaceOrder(base({ items: { 'xs-energy-can': 2, 'hand-warmer': 1 }, expectedTotalCents: null }), deps);
+      expect(r.status).toBe(422);
+      expect(JSON.stringify(r.body)).toContain('free_only');
+    });
     it('extras do not count toward the 3-item minimum or the large-order limit', async () => {
       const r = await handlePlaceOrder(base({ items: { 'xs-energy-can': 2 }, expectedTotalCents: null }), deps);
       expect(JSON.stringify(r.body)).toContain('too_few');

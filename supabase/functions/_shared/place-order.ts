@@ -52,6 +52,8 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
 
   const problems: { code: string; itemId?: string }[] = validateCart(input.items, catalog, settings);
   problems.push(...validateFreeItems(input.freeItems, catalog, settings));
+  // The free-gift shelf is gifts only: it cannot be bought.
+  for (const id of Object.keys(input.items)) if (catalog.find((c) => c.id === id)?.shelf === settings.freeShelf) problems.push({ code: 'free_only', itemId: id });
   for (const [id, qty] of Object.entries(input.items)) {
     const it = items.find((i) => i.id === id);
     if (it && it.stock !== null && qty > it.stock && it.stock > 0) problems.push({ code: 'insufficient_stock', itemId: id });

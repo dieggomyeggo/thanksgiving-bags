@@ -29,7 +29,7 @@ on conflict (id) do update set shelf = excluded.shelf, name = excluded.name, kin
 insert into public.starter_bags (id, name, blurb, items, sort, active) values
   ('gym-bro', 'Gym Bro', 'Fuel for the lifters', '{"xs-energy-can":2,"xs-pre-workout":1,"xs-protein-bar":1,"xs-protein-crisps":1}'::jsonb, 1, true),
   ('busy-mom', 'Busy Mom', 'Quick wins between everything', '{"twist-tube":2,"xs-cocowater":1,"immunity-pack":1,"chamomile-tea":1,"hot-cocoa":1}'::jsonb, 2, true),
-  ('golden-years', 'Golden Years', 'Gentle, low caffeine', '{"ginger-mint-tea":2,"fiber-stick":1,"honey-stick":2,"hand-warmer":1,"hot-cocoa":1}'::jsonb, 3, true),
+  ('golden-years', 'Golden Years', 'Gentle, low caffeine', '{"ginger-mint-tea":2,"fiber-stick":1,"honey-stick":2,"apple-cider":1,"hot-cocoa":1}'::jsonb, 3, true),
   ('thanksgiving-table', 'Thanksgiving Table', 'Warm and festive', '{"apple-cider":2,"hot-cocoa":1,"seasonal-treat":1,"ginger-mint-tea":1,"xs-cocowater":1}'::jsonb, 4, true)
 on conflict (id) do update set name = excluded.name, blurb = excluded.blurb, items = excluded.items, sort = excluded.sort, active = excluded.active;
 

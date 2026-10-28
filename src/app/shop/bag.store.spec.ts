@@ -99,4 +99,11 @@ describe('BagStore (on the mock API)', () => {
     expect(r.ok && r.totalCents).toBe(before);
     expect(store.confirmation()?.lines.filter((l) => l.free).length).toBe(2);
   });
+
+  it('the free-gift shelf is not browsable or buyable, only choosable', () => {
+    expect(store.shelves()).not.toContain('Cozy extras');
+    store.applyStarter({ id: 'x', name: 'X', blurb: '', sort: 1, items: { 'honey-stick': 3, 'hand-warmer': 1 } });
+    expect(store.count()).toBe(3);
+    expect(store.freeOptions().map((i) => i.id)).toContain('hand-warmer');
+  });
 });

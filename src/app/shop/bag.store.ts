@@ -55,7 +55,8 @@ export class BagStore {
   readonly cartItems = computed<CartItem[]>(() => this.catalog().map((i) => ({ id: i.id, unitPriceCents: i.unitPriceCents, weightLb: i.weightLb, available: true })));
   readonly shelves = computed(() => {
     const order: string[] = [];
-    for (const i of [...this.catalog()].sort((a, b) => a.sort - b.sort)) if (!order.includes(i.shelf)) order.push(i.shelf);
+    // The free-gift shelf is picked in the bag panel, not browsed or bought.
+    for (const i of [...this.catalog()].sort((a, b) => a.sort - b.sort)) if (i.shelf !== this.settings().freeShelf && !order.includes(i.shelf)) order.push(i.shelf);
     return order;
   });
   readonly freeOptions = computed(() => this.catalog().filter((i) => i.kind === 'other' && i.shelf === this.settings().freeShelf).sort((a, b) => a.sort - b.sort));
@@ -120,7 +121,7 @@ export class BagStore {
       this.settings.set(settings);
       this.zips.set(zips);
       // Drop anything that disappeared (sold out) since the bag was built.
-      this.lines.update((l) => Object.fromEntries(Object.entries(l).filter(([id]) => catalog.some((c) => c.id === id))));
+      this.lines.update((l) => Object.fromEntries(Object.entries(l).filter(([id]) => catalog.some((c) => c.id === id && c.shelf !== settings.freeShelf))));
       this.freePicks.update((p) => p.map((id) => (catalog.some((c) => c.id === id && c.kind === 'other' && c.shelf === this.settings().freeShelf) ? id : '')));
       this.loadError.set(null);
     } catch (e) {
@@ -150,7 +151,9 @@ export class BagStore {
     const next: Record<string, number> = {};
     const missing: string[] = [];
     for (const [id, qty] of Object.entries(s.items)) {
-      if (this.catalog().some((c) => c.id === id)) next[id] = qty;
+      const it = this.catalog().find((c) => c.id === id);
+      if (it?.shelf === this.settings().freeShelf) continue; // gifts are chosen separately
+      if (it) next[id] = qty;
       else missing.push(id);
     }
     this.lines.set(next);
