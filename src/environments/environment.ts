@@ -2,7 +2,7 @@
 export const environment = {
   production: false,
   useMock: true,
-  allowDateOverride: true, // ?today=2026-11-10 simulates a date (mock/test only)
+  allowDateOverride: true, // ?today=2026-11-17 simulates a date (mock/test only)
   supabaseUrl: '',
   supabaseAnonKey: '',
 };

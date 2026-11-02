@@ -71,8 +71,8 @@ insert into public.zips (zip, zone) values
 on conflict (zip) do update set zone = excluded.zone;
 
 insert into public.settings (key, value) values
-  ('cutoffShip', '"2026-11-08"'::jsonb),
-  ('cutoffLocal', '"2026-11-12"'::jsonb),
+  ('cutoffShip', '"2026-11-15"'::jsonb),
+  ('cutoffLocal', '"2026-11-19"'::jsonb),
   ('orderingCloses', '"2026-11-30"'::jsonb),
   ('shipTiers', '[{"maxLb":2,"cents":1100},{"maxLb":4,"cents":1500},{"maxLb":8,"cents":2200}]'::jsonb),
   ('farDeliveryCents', '500'::jsonb),

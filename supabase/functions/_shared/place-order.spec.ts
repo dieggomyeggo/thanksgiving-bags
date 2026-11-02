@@ -111,12 +111,12 @@ describe('handlePlaceOrder', () => {
 
   it('flags a late order after each cutoff', async () => {
     const sub = 2 * P('xs-energy-can') + P('honey-stick');
-    deps.now = () => new Date('2026-11-10T18:00:00Z'); // after Nov 8, before Nov 12
+    deps.now = () => new Date('2026-11-17T18:00:00Z'); // after Nov 15, before Nov 19
     const ship = await handlePlaceOrder(base({ method: 'ship', zip: '60601', address: 'x', expectedTotalCents: sub + 1500 }), deps);
     expect(ship.body).toMatchObject({ late: true });
     const local = await handlePlaceOrder(base({ expectedTotalCents: sub }), deps);
     expect(local.body).toMatchObject({ late: false });
-    deps.now = () => new Date('2026-11-14T18:00:00Z');
+    deps.now = () => new Date('2026-11-21T18:00:00Z');
     const local2 = await handlePlaceOrder(base({ expectedTotalCents: sub }), deps);
     expect(local2.body).toMatchObject({ late: true });
     expect(sent.at(-1)!.text).toMatch(/will not arrive before Thanksgiving/);

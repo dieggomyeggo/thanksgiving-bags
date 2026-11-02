@@ -2,8 +2,8 @@ import type { Settings } from './types.ts';
 
 /** Hardcoded fallback settings (the cut line: the site works with these alone). Placeholders until the owner confirms. */
 export const DEFAULT_SETTINGS: Settings = {
-  cutoffShip: '2026-11-08',
-  cutoffLocal: '2026-11-12',
+  cutoffShip: '2026-11-15',
+  cutoffLocal: '2026-11-19',
   orderingCloses: '2026-11-30',
   shipTiers: [
     { maxLb: 2, cents: 1100 },

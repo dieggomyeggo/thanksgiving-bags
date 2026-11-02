@@ -25,8 +25,8 @@ describe('emails', () => {
     const t = renderEmail('placed', order, DEFAULT_SETTINGS).text;
     expect(t).toContain('Venmo');
     expect(t).toContain('Put TG-1234 in the memo');
-    expect(t).toContain('Nov 8');
-    expect(t).toContain('Nov 12');
+    expect(t).toContain('Nov 15');
+    expect(t).toContain('Nov 19');
   });
   it('late orders get the Thanksgiving notice', () => {
     expect(renderEmail('placed', { ...order, late: true }, DEFAULT_SETTINGS).text).toMatch(/will not arrive before Thanksgiving/);
