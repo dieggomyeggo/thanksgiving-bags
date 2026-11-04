@@ -45,6 +45,8 @@ export interface ItemRow {
   active: boolean;
   sort: number;
   unitPriceCents: number;
+  /** Flavor/variety choices the customer must pick from; empty or missing means the item has none. */
+  flavors?: string[];
 }
 
 /** What the browser sees (`public_catalog` view): no cost, no PV/BV, no retail, no stock count. */
@@ -58,6 +60,7 @@ export interface PublicItem {
   tags: ItemTags;
   tagsVerified: boolean;
   sort: number;
+  flavors?: string[];
 }
 
 export interface StarterBag {
@@ -118,6 +121,8 @@ export interface OrderLine {
   qty: number;
   unitPriceCents: number;
   unitCostCents: number;
+  /** Chosen flavor, empty or missing when the item has none. */
+  flavor?: string;
   /** One of the free non-Amway extras that come with every order (price 0, owner pays cost). */
   free?: boolean;
 }

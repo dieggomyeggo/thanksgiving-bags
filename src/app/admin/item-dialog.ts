@@ -37,6 +37,8 @@ import { dollarsToCents, money } from '../core/format';
       <mat-form-field appearance="outline"><mat-label>Stock (blank = unlimited)</mat-label><input matInput type="number" min="0" [(ngModel)]="stock" name="stock"></mat-form-field>
       <mat-form-field appearance="outline"><mat-label>Sort</mat-label><input matInput type="number" [(ngModel)]="sort" name="sort"></mat-form-field>
 
+      <mat-form-field appearance="outline" class="wide"><mat-label>Flavors (separate with commas; leave blank if none)</mat-label><input matInput [(ngModel)]="flavors" name="flavors" placeholder="Citrus, Berry, Tropical"><mat-hint>Shoppers must pick one. Your Amway order list is split per flavor.</mat-hint></mat-form-field>
+
       <div class="wide price" [class.bad]="!ok()" aria-live="polite">
         Price: <b>{{ priceText() }}</b> · margin {{ marginText() }}
         @if (!ok()) { <b> · below the pricing floor!</b> } @else { <span class="muted"> · floor OK (covers 3% fee and the 25%/$0.50 buffer)</span> }
@@ -83,6 +85,7 @@ export class ItemDialog {
   protected readonly bv = signal<number | null>(this.src?.bv ?? null);
   protected readonly stock = signal<number | null>(this.src?.stock ?? null);
   protected readonly sort = signal(this.src?.sort ?? 100);
+  protected readonly flavors = signal((this.src?.flavors ?? []).join(', '));
   protected readonly caffeine = signal<number | null>(this.src?.tags.caffeineMg ?? null);
   protected readonly nsf = signal(this.src?.tags.nsf ?? '');
   protected readonly allergens = signal((this.src?.tags.allergens ?? []).join(', '));
@@ -118,6 +121,7 @@ export class ItemDialog {
       weightLb: Number(this.weight()), boxSize: Math.max(1, Math.round(Number(this.boxSize()))), tags, tagsVerified: this.verified(),
       individuallyWrapped: this.wrapped(), stock: num(this.stock()), soldOut: this.soldOut(), active: this.active(),
       sort: Number(this.sort()), unitPriceCents: this.price()!,
+      flavors: [...new Set(this.flavors().split(',').map((x) => x.trim().replace(/@@/g, '')).filter(Boolean))],
     });
   }
 }

@@ -1,6 +1,6 @@
 // Core of the place-order Edge Function. The server recomputes every price, the shipping tier and lateness
 // from the database; nothing the browser sends about money is trusted.
-import { countItems, isLargeOrder, validateBonusItems, subtotalCents, validateCart, validateFreeItems, weightLb, type CartItem } from './cart.ts';
+import { countItems, isLargeOrder, splitKey, validateBonusItems, subtotalCents, validateCart, validateFreeItems, weightLb, type CartItem } from './cart.ts';
 import { DuplicateNumberError, type Mailer, type ServerDb } from './db.ts';
 import { renderEmail } from './emails.ts';
 import { isLate } from './cutoffs.ts';
@@ -46,7 +46,7 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
 
   const [items, settings, zips] = await Promise.all([deps.db.getItems(), deps.db.getSettings(), deps.db.getZips()]);
   const catalog: (CartItem & { costCents: number; name: string })[] = items.map((i) => ({
-    id: i.id, unitPriceCents: i.unitPriceCents, weightLb: i.weightLb, costCents: i.costCents, name: i.name, kind: i.kind, shelf: i.shelf,
+    id: i.id, unitPriceCents: i.unitPriceCents, weightLb: i.weightLb, costCents: i.costCents, name: i.name, kind: i.kind, shelf: i.shelf, flavors: i.flavors ?? [],
     available: i.active && !i.soldOut && (i.stock === null || i.stock > 0),
   }));
 
@@ -54,8 +54,13 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
   problems.push(...validateFreeItems(input.freeItems, catalog, settings, countItems(input.items)));
   problems.push(...validateBonusItems(input.bonusItems, catalog, settings, subtotalCents(input.items, catalog)));
   // The free-gift shelf is gifts only: it cannot be bought.
-  for (const id of Object.keys(input.items)) if (catalog.find((c) => c.id === id)?.shelf === settings.freeShelf) problems.push({ code: 'free_only', itemId: id });
-  for (const [id, qty] of Object.entries(input.items)) {
+  const perItem = new Map<string, number>();
+  for (const [key, qty] of Object.entries(input.items)) {
+    const id = splitKey(key).id;
+    if (catalog.find((c) => c.id === id)?.shelf === settings.freeShelf) problems.push({ code: 'free_only', itemId: id });
+    perItem.set(id, (perItem.get(id) ?? 0) + qty);
+  }
+  for (const [id, qty] of perItem) {
     const it = items.find((i) => i.id === id);
     if (it && it.stock !== null && qty > it.stock && it.stock > 0) problems.push({ code: 'insufficient_stock', itemId: id });
   }
@@ -81,14 +86,18 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
   }
 
   const late = isLate(input.method, now, settings);
+  const freeKeys: Record<string, number> = { ...input.freeItems };
+  for (const [k, v] of Object.entries(input.bonusItems)) freeKeys[k] = (freeKeys[k] ?? 0) + v;
   const lines: OrderLine[] = [
-    ...Object.entries(input.items).map(([itemId, qty]) => {
+    ...Object.entries(input.items).map(([key, qty]) => {
+      const { id: itemId, flavor } = splitKey(key);
       const it = catalog.find((c) => c.id === itemId)!;
-      return { itemId, qty, unitPriceCents: it.unitPriceCents, unitCostCents: it.costCents };
+      return { itemId, qty, unitPriceCents: it.unitPriceCents, unitCostCents: it.costCents, flavor };
     }),
-    ...Object.entries({ ...input.freeItems, ...Object.fromEntries(Object.entries(input.bonusItems).map(([k, v]) => [k, (input.freeItems[k] ?? 0) + v])) }).map(([itemId, qty]) => {
+    ...Object.entries(freeKeys).map(([key, qty]) => {
+      const { id: itemId, flavor } = splitKey(key);
       const it = catalog.find((c) => c.id === itemId)!;
-      return { itemId, qty, unitPriceCents: 0, unitCostCents: it.costCents, free: true };
+      return { itemId, qty, unitPriceCents: 0, unitCostCents: it.costCents, flavor, free: true };
     }),
   ];
 
@@ -113,7 +122,7 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
   try {
     const mail = renderEmail('placed', {
       number, name: input.name, method: input.method, payMethod: input.payMethod,
-      lines: lines.map((l) => ({ name: catalog.find((c) => c.id === l.itemId)!.name, qty: l.qty, totalCents: l.qty * l.unitPriceCents, free: l.free })),
+      lines: lines.map((l) => ({ name: catalog.find((c) => c.id === l.itemId)!.name + (l.flavor ? ` (${l.flavor})` : ''), qty: l.qty, totalCents: l.qty * l.unitPriceCents, free: l.free })),
       subtotalCents: subtotal, shippingCents: shipping, totalCents: total, shippingQuoteNeeded, needsApproval, late,
       tracking: null, readyWindow: null,
     }, settings);

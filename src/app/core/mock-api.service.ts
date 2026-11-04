@@ -11,7 +11,7 @@ import { ClockService } from './clock.service';
 
 const toPublic = (i: ItemRow): PublicItem => ({
   id: i.id, shelf: i.shelf, name: i.name, kind: i.kind, unitPriceCents: i.unitPriceCents,
-  weightLb: i.weightLb, tags: i.tagsVerified ? i.tags : {}, tagsVerified: i.tagsVerified, sort: i.sort,
+  weightLb: i.weightLb, tags: i.tagsVerified ? i.tags : {}, tagsVerified: i.tagsVerified, sort: i.sort, flavors: i.flavors ?? [],
 });
 const available = (i: ItemRow) => i.active && !i.soldOut && (i.stock === null || i.stock > 0);
 

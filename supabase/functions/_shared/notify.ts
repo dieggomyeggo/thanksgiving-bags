@@ -24,7 +24,7 @@ export async function handleNotify(raw: unknown, deps: NotifyDeps): Promise<Http
   const names = new Map(items.map((i) => [i.id, i.name]));
   const mail = renderEmail(event, {
     number: order.number, name: order.name, method: order.method, payMethod: order.payMethod,
-    lines: order.lines.map((l) => ({ name: names.get(l.itemId) ?? l.itemId, qty: l.qty, totalCents: l.qty * l.unitPriceCents, free: l.free })),
+    lines: order.lines.map((l) => ({ name: (names.get(l.itemId) ?? l.itemId) + (l.flavor ? ` (${l.flavor})` : ''), qty: l.qty, totalCents: l.qty * l.unitPriceCents, free: l.free })),
     subtotalCents: order.subtotalCents, shippingCents: order.shippingCents, totalCents: order.totalCents,
     shippingQuoteNeeded: order.shippingQuoteNeeded, needsApproval: order.needsApproval, late: order.late,
     tracking: order.tracking, readyWindow: order.readyWindow,

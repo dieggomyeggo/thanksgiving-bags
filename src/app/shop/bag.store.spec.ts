@@ -82,8 +82,8 @@ describe('BagStore (on the mock API)', () => {
     store.setQty('honey-stick', 3);
     store.name.set('Pat');
     store.email.set('pat@example.com');
-    expect(store.freeOptions().every((i) => i.kind === 'other' && i.shelf === 'Cozy extras')).toBe(true);
-    expect(store.freeOptions().map((i) => i.id)).not.toContain('hot-cocoa');
+    expect(store.freeOptions().every((o) => o.item.kind === 'other' && o.item.shelf === 'Cozy extras')).toBe(true);
+    expect(store.freeOptions().map((o) => o.item.id)).not.toContain('hot-cocoa');
     expect(store.problems()).toEqual([]);
     store.freePicks.set(['hand-warmer', '']);
     expect(store.problems().join(' ')).toContain('Choose your 2 free extras');
@@ -104,6 +104,6 @@ describe('BagStore (on the mock API)', () => {
     expect(store.shelves()).not.toContain('Cozy extras');
     store.applyStarter({ id: 'x', name: 'X', blurb: '', sort: 1, items: { 'honey-stick': 3, 'hand-warmer': 1 } });
     expect(store.count()).toBe(3);
-    expect(store.freeOptions().map((i) => i.id)).toContain('hand-warmer');
+    expect(store.freeOptions().map((o) => o.item.id)).toContain('hand-warmer');
   });
 });

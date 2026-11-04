@@ -48,7 +48,7 @@ import { ThemeTiles } from './theme-tiles';
               <h2>{{ shelf() }}</h2>
               <div class="grid">
                 @for (i of shelfItems(); track i.id) {
-                  <app-item-card [item]="i" [qty]="s.qty(i.id)" (inc)="s.inc(i.id)" (dec)="s.dec(i.id)" />
+                  <app-item-card [item]="i" [lines]="s.lines()" (inc)="s.inc($event)" (dec)="s.dec($event)" />
                 } @empty {
                   <p class="muted">Nothing on this shelf right now.</p>
                 }

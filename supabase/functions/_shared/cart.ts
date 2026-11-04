@@ -9,14 +9,25 @@ export interface CartItem {
   available: boolean;
   kind?: 'amway' | 'other';
   shelf?: string;
+  flavors?: string[];
 }
 
 export interface CartError {
-  code: 'too_few' | 'unknown_item' | 'unavailable' | 'bad_qty' | 'bad_free' | 'free_only' | 'bad_bonus';
+  code: 'too_few' | 'unknown_item' | 'unavailable' | 'bad_qty' | 'bad_free' | 'free_only' | 'bad_bonus' | 'bad_flavor';
   itemId?: string;
 }
 
 export const MAX_QTY_PER_ITEM = 99;
+
+/** Cart keys are the item id, or `id@@Flavor` when the item comes in flavors. */
+export const FLAVOR_SEP = '@@';
+export const lineKey = (id: string, flavor?: string): string => (flavor ? `${id}${FLAVOR_SEP}${flavor}` : id);
+export function splitKey(key: string): { id: string; flavor: string } {
+  const i = key.indexOf(FLAVOR_SEP);
+  return i < 0 ? { id: key, flavor: '' } : { id: key.slice(0, i), flavor: key.slice(i + FLAVOR_SEP.length) };
+}
+/** A flavored item needs one of its flavors; an unflavored item must have none. */
+export const flavorOk = (it: Pick<CartItem, 'flavors'>, flavor: string): boolean => ((it.flavors?.length ?? 0) ? it.flavors!.includes(flavor) : flavor === '');
 
 export function countItems(lines: CartLines): number {
   let n = 0;
@@ -27,14 +38,14 @@ export function countItems(lines: CartLines): number {
 export function subtotalCents(lines: CartLines, catalog: Pick<CartItem, 'id' | 'unitPriceCents'>[]): number {
   const by = new Map(catalog.map((i) => [i.id, i]));
   let t = 0;
-  for (const [id, q] of Object.entries(lines)) t += (by.get(id)?.unitPriceCents ?? 0) * q;
+  for (const [key, q] of Object.entries(lines)) t += (by.get(splitKey(key).id)?.unitPriceCents ?? 0) * q;
   return t;
 }
 
 export function weightLb(lines: CartLines, catalog: Pick<CartItem, 'id' | 'weightLb'>[], packagingLb: number): number {
   const by = new Map(catalog.map((i) => [i.id, i]));
   let w = packagingLb;
-  for (const [id, q] of Object.entries(lines)) w += (by.get(id)?.weightLb ?? 0) * q;
+  for (const [key, q] of Object.entries(lines)) w += (by.get(splitKey(key).id)?.weightLb ?? 0) * q;
   return w;
 }
 
@@ -65,9 +76,10 @@ export const isBonusEligible = (it: Pick<CartItem, 'available' | 'shelf' | 'unit
 export function validateBonusItems(bonus: CartLines, catalog: CartItem[], s: BonusSettings, subtotal: number): CartError[] {
   const errors: CartError[] = [];
   const by = new Map(catalog.map((i) => [i.id, i]));
-  for (const [id, q] of Object.entries(bonus)) {
+  for (const [key, q] of Object.entries(bonus)) {
+    const { id, flavor } = splitKey(key);
     const it = by.get(id);
-    if (!Number.isInteger(q) || q < 1 || !it || !isBonusEligible(it, s)) errors.push({ code: 'bad_bonus', itemId: id });
+    if (!Number.isInteger(q) || q < 1 || !it || !isBonusEligible(it, s) || !flavorOk(it, flavor)) errors.push({ code: 'bad_bonus', itemId: id });
   }
   if (countItems(bonus) > bonusCountFor(subtotal, s)) errors.push({ code: 'bad_bonus' });
   return errors;
@@ -77,10 +89,11 @@ export function validateBonusItems(bonus: CartLines, catalog: CartItem[], s: Bon
 export function validateFreeItems(free: CartLines, catalog: CartItem[], s: Pick<Settings, 'minItems' | 'freeItemCount' | 'freeEveryItems' | 'freeMaxItems' | 'freeShelf'>, paidCount: number): CartError[] {
   const errors: CartError[] = [];
   const by = new Map(catalog.map((i) => [i.id, i]));
-  for (const [id, q] of Object.entries(free)) {
+  for (const [key, q] of Object.entries(free)) {
+    const { id, flavor } = splitKey(key);
     const it = by.get(id);
     if (!Number.isInteger(q) || q < 1) errors.push({ code: 'bad_free', itemId: id });
-    else if (!it || !it.available || it.kind !== 'other' || it.shelf !== s.freeShelf) errors.push({ code: 'bad_free', itemId: id });
+    else if (!it || !it.available || it.kind !== 'other' || it.shelf !== s.freeShelf || !flavorOk(it, flavor)) errors.push({ code: 'bad_free', itemId: id });
   }
   if (countItems(free) !== freeCountFor(paidCount, s)) errors.push({ code: 'bad_free' });
   return errors;
@@ -89,7 +102,8 @@ export function validateFreeItems(free: CartLines, catalog: CartItem[], s: Pick<
 export function validateCart(lines: CartLines, catalog: CartItem[], s: Pick<Settings, 'minItems'>): CartError[] {
   const errors: CartError[] = [];
   const by = new Map(catalog.map((i) => [i.id, i]));
-  for (const [id, q] of Object.entries(lines)) {
+  for (const [key, q] of Object.entries(lines)) {
+    const { id, flavor } = splitKey(key);
     if (!Number.isInteger(q) || q < 1 || q > MAX_QTY_PER_ITEM) {
       errors.push({ code: 'bad_qty', itemId: id });
       continue;
@@ -97,6 +111,7 @@ export function validateCart(lines: CartLines, catalog: CartItem[], s: Pick<Sett
     const it = by.get(id);
     if (!it) errors.push({ code: 'unknown_item', itemId: id });
     else if (!it.available) errors.push({ code: 'unavailable', itemId: id });
+    else if (!flavorOk(it, flavor)) errors.push({ code: 'bad_flavor', itemId: id });
   }
   if (countItems(lines) < s.minItems) errors.push({ code: 'too_few' });
   return errors;

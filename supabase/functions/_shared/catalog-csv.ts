@@ -63,6 +63,7 @@ export function catalogFromCsv(text: string): CatalogImport {
     sf: col('sugar-free'), org: col('organic'), vegan: col('vegan'), nsf: col('nsf'), allergens: col('allergens'),
     wrapped: col('individually wrapped'), include: col('include'), shelf: col('shelf'),
   };
+  const flavorCol = col('flavors'); // optional column: flavor choices separated by ;
   const missing = Object.entries(idx).filter(([, v]) => v < 0).map(([k]) => k);
   if (missing.length) return { items: [], warnings: [`missing columns: ${missing.join(', ')}`] };
 
@@ -103,6 +104,7 @@ export function catalogFromCsv(text: string): CatalogImport {
       pv: pvBox === null ? null : +(pvBox / boxSize).toFixed(2), bv: bvBox === null ? null : +(bvBox / boxSize).toFixed(2),
       weightLb: weightLb ?? 0.2, boxSize, tags, tagsVerified: true,
       individuallyWrapped: !filled(r[idx.wrapped]) || yes(r[idx.wrapped]),
+      flavors: flavorCol >= 0 ? (r[flavorCol] ?? '').split(/[;|]/).map((x) => x.trim().replace(/@@/g, '')).filter(Boolean) : [],
       stock: null, soldOut: filled(r[idx.stock]) && !yes(r[idx.stock]), active: true, sort: (items.length + 1) * 10,
       unitPriceCents: unitPriceCents(costCents, retailCents),
     });

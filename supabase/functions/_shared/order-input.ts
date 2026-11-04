@@ -34,17 +34,17 @@ export function validateOrderInput(raw: unknown): InputResult {
 
   const items: Record<string, number> = {};
   if (r['items'] && typeof r['items'] === 'object' && !Array.isArray(r['items'])) {
-    for (const [k, v] of Object.entries(r['items'] as Record<string, unknown>)) items[k.slice(0, 64)] = typeof v === 'number' ? v : NaN;
+    for (const [k, v] of Object.entries(r['items'] as Record<string, unknown>)) items[k.slice(0, 120)] = typeof v === 'number' ? v : NaN;
   } else errors.push('items required');
 
   const freeItems: Record<string, number> = {};
   if (r['freeItems'] && typeof r['freeItems'] === 'object' && !Array.isArray(r['freeItems'])) {
-    for (const [k, v] of Object.entries(r['freeItems'] as Record<string, unknown>)) freeItems[k.slice(0, 64)] = typeof v === 'number' ? v : NaN;
+    for (const [k, v] of Object.entries(r['freeItems'] as Record<string, unknown>)) freeItems[k.slice(0, 120)] = typeof v === 'number' ? v : NaN;
   }
 
   const bonusItems: Record<string, number> = {};
   if (r['bonusItems'] && typeof r['bonusItems'] === 'object' && !Array.isArray(r['bonusItems'])) {
-    for (const [k, v] of Object.entries(r['bonusItems'] as Record<string, unknown>)) bonusItems[k.slice(0, 64)] = typeof v === 'number' ? v : NaN;
+    for (const [k, v] of Object.entries(r['bonusItems'] as Record<string, unknown>)) bonusItems[k.slice(0, 120)] = typeof v === 'number' ? v : NaN;
   }
 
   const method = r['method'] as Method;

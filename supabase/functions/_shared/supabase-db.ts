@@ -30,7 +30,7 @@ export function createSupabaseDb(sb: any): ServerDb {
         shipping_quote_needed: o.shippingQuoteNeeded, late: o.late, needs_approval: o.needsApproval, opt_followup: o.optFollowup,
         opt_shoutout: o.optShoutout, notes: o.notes ?? '', test: o.test, client_hash: o.clientHash,
       };
-      const linesJson = o.lines.map((l) => ({ item_id: l.itemId, qty: l.qty, unit_price_cents: l.unitPriceCents, unit_cost_cents: l.unitCostCents, free: !!l.free }));
+      const linesJson = o.lines.map((l) => ({ item_id: l.itemId, qty: l.qty, unit_price_cents: l.unitPriceCents, unit_cost_cents: l.unitCostCents, flavor: l.flavor ?? '', free: !!l.free }));
       const res = await sb.rpc('place_order', { o: orderJson, lines: linesJson });
       if (res.error) {
         if (res.error.code === '23505') throw new DuplicateNumberError();

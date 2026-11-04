@@ -24,8 +24,8 @@ import { QtyStepper } from './qty-stepper';
 
         @for (l of s.bagLines(); track l.item.id) {
           <div class="line">
-            <span class="ln">{{ l.item.name }} <span class="muted">{{ m(l.item.unitPriceCents) }}</span></span>
-            <app-qty-stepper [value]="l.qty" [label]="l.item.name" (inc)="s.inc(l.item.id)" (dec)="s.dec(l.item.id)" />
+            <span class="ln">{{ l.item.name }}@if (l.flavor) { <span class="flavor"> · {{ l.flavor }}</span> } <span class="muted">{{ m(l.item.unitPriceCents) }}</span></span>
+            <app-qty-stepper [value]="l.qty" [label]="l.item.name + (l.flavor ? ' ' + l.flavor : '')" (inc)="s.inc(l.key)" (dec)="s.dec(l.key)" />
           </div>
         } @empty {
           <p class="muted">Your bag is empty. Pick a theme or add items from a shelf.</p>
@@ -41,7 +41,7 @@ import { QtyStepper } from './qty-stepper';
                 <mat-label>Free extra {{ $index + 1 }}</mat-label>
                 <mat-select [ngModel]="slot" (ngModelChange)="pickFree($index, $event)" [name]="'free' + $index">
                   <mat-option value="">Choose…</mat-option>
-                  @for (o of s.freeOptions(); track o.id) { <mat-option [value]="o.id">{{ o.name }}</mat-option> }
+                  @for (o of s.freeOptions(); track o.key) { <mat-option [value]="o.key">{{ o.label }}</mat-option> }
                 </mat-select>
               </mat-form-field>
             }
@@ -58,7 +58,7 @@ import { QtyStepper } from './qty-stepper';
                 <mat-label>Free item {{ $index + 1 }}</mat-label>
                 <mat-select [ngModel]="slot" (ngModelChange)="pickBonus($index, $event)" [name]="'bonus' + $index">
                   <mat-option value="">None</mat-option>
-                  @for (o of s.bonusOptions(); track o.id) { <mat-option [value]="o.id">{{ o.name }} ({{ m(o.unitPriceCents) }} value)</mat-option> }
+                  @for (o of s.bonusOptions(); track o.key) { <mat-option [value]="o.key">{{ o.label }} ({{ m(o.item.unitPriceCents) }} value)</mat-option> }
                 </mat-select>
               </mat-form-field>
             }
@@ -101,6 +101,7 @@ import { QtyStepper } from './qty-stepper';
     :host { display: block; }
     .line { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .ln { flex: 1; }
+    .flavor { font-weight: 600; color: var(--mat-sys-primary); }
     .small { font-size: 12px; }
     .free { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; padding: 10px; border-radius: 12px; background: var(--mat-sys-surface-container-high); }
     .totals { border-top: 1px solid var(--mat-sys-outline-variant); margin: 8px 0; padding-top: 8px; }

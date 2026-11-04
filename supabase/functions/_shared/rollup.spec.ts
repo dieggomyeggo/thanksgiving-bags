@@ -65,3 +65,14 @@ describe('buildRollup', () => {
     expect(r.rows[0]).toMatchObject({ itemId: 'cocoa', units: 4 });
   });
 });
+
+describe('buildRollup flavors', () => {
+  it('rounds boxes up per flavor, since a box is one flavor', () => {
+    const r = buildRollup(
+      [o({ lines: [{ itemId: 'can', qty: 7, flavor: 'Citrus' }, { itemId: 'can', qty: 7, flavor: 'Berry' }] })],
+      items,
+    );
+    expect(r.rows.map((x) => [x.name, x.units, x.boxes]).sort()).toEqual([['XS Energy 12 oz can - Berry', 7, 1], ['XS Energy 12 oz can - Citrus', 7, 1]]);
+    expect(r.text).toContain('XS Energy 12 oz can - Citrus');
+  });
+});

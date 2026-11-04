@@ -5,7 +5,7 @@ export interface RollupOrder {
   payMethod: PayMethod;
   cashConfirmed: boolean;
   test: boolean;
-  lines: { itemId: string; qty: number }[];
+  lines: { itemId: string; qty: number; flavor?: string }[];
 }
 
 export interface RollupItem {
@@ -18,6 +18,7 @@ export interface RollupItem {
 
 export interface RollupRow {
   itemId: string;
+  flavor: string;
   name: string;
   kind: ItemKind;
   units: number;
@@ -45,10 +46,11 @@ export function buildRollup(orders: RollupOrder[], items: RollupItem[]): Rollup 
   const units = new Map<string, number>();
   for (const o of orders) {
     if (!inRollup(o)) continue;
-    for (const l of o.lines) units.set(l.itemId, (units.get(l.itemId) ?? 0) + l.qty);
+    for (const l of o.lines) { const k = `${l.itemId}\u0000${l.flavor ?? ''}`; units.set(k, (units.get(k) ?? 0) + l.qty); }
   }
   const rows: RollupRow[] = [];
-  for (const [itemId, n] of units) {
+  for (const [vk, n] of units) {
+    const [itemId, flavor = ''] = vk.split('\u0000');
     const it = by.get(itemId);
     if (!it) continue;
     const amway = it.kind === 'amway';
@@ -56,7 +58,8 @@ export function buildRollup(orders: RollupOrder[], items: RollupItem[]): Rollup 
     const boxes = Math.ceil(n / boxSize);
     rows.push({
       itemId,
-      name: it.name,
+      flavor,
+      name: flavor ? `${it.name} - ${flavor}` : it.name,
       kind: it.kind,
       units: n,
       boxSize,

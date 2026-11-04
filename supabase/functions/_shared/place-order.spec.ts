@@ -226,6 +226,25 @@ describe('handlePlaceOrder', () => {
         expect(db.orders[0].lines.find((l) => l.itemId === cheap.id)).toMatchObject({ unitPriceCents: 0, free: true });
       });
     });
+    describe('flavors', () => {
+      const flav = (id: string) => { db.items.find((i) => i.id === id)!.flavors = ['Citrus', 'Berry']; };
+      it('requires a valid flavor for flavored items and records it on the order', async () => {
+        flav('xs-energy-can');
+        const exp = 2 * P('xs-energy-can') + P('honey-stick');
+        const missing = await handlePlaceOrder(base({ expectedTotalCents: exp }), deps);
+        expect(missing.status).toBe(422);
+        expect(JSON.stringify(missing.body)).toContain('bad_flavor');
+        expect((await handlePlaceOrder(base({ items: { 'xs-energy-can@@Grape': 2, 'honey-stick': 1 }, expectedTotalCents: exp }), deps)).status).toBe(422);
+        const ok = await handlePlaceOrder(base({ items: { 'xs-energy-can@@Citrus': 1, 'xs-energy-can@@Berry': 1, 'honey-stick': 1 }, expectedTotalCents: exp }), deps);
+        expect(ok.status).toBe(200);
+        expect(db.orders[0].lines.filter((l) => l.itemId === 'xs-energy-can').map((l) => [l.flavor, l.qty]).sort()).toEqual([['Berry', 1], ['Citrus', 1]]);
+        expect(sent[0].text).toContain('(Citrus)');
+      });
+      it('rejects a flavor on an item that has none', async () => {
+        const r = await handlePlaceOrder(base({ items: { 'xs-energy-can@@Citrus': 2, 'honey-stick': 1 }, expectedTotalCents: null }), deps);
+        expect(r.status).toBe(422);
+      });
+    });
     it('allows two of the same extra', async () => {
       expect((await handlePlaceOrder(base({ freeItems: { 'hand-warmer': 2 } }), deps)).status).toBe(200);
     });

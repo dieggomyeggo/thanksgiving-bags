@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { bonusCountFor, countItems, freeCountFor, isLargeOrder, subtotalCents, validateCart, weightLb, type CartItem } from '@shared/cart';
+import { bonusCountFor, countItems, flavorOk, freeCountFor, lineKey, splitKey, isLargeOrder, subtotalCents, validateCart, weightLb, type CartItem } from '@shared/cart';
 import { isLate, lateNotice } from '@shared/cutoffs';
 import { DEFAULT_SETTINGS } from '@shared/settings';
 import { quoteShipping } from '@shared/shipping';
@@ -60,7 +60,18 @@ export class BagStore {
     for (const i of [...this.catalog()].sort((a, b) => a.sort - b.sort)) if (i.shelf !== this.settings().freeShelf && !order.includes(i.shelf)) order.push(i.shelf);
     return order;
   });
-  readonly freeOptions = computed(() => this.catalog().filter((i) => i.kind === 'other' && i.shelf === this.settings().freeShelf).sort((a, b) => a.sort - b.sort));
+  /** One option per item, or per flavor for flavored items. */
+  private expand(items: PublicItem[]): { key: string; label: string; item: PublicItem; flavor: string }[] {
+    return items.flatMap((item) =>
+      item.flavors?.length ? item.flavors.map((flavor) => ({ key: lineKey(item.id, flavor), label: `${item.name} - ${flavor}`, item, flavor })) : [{ key: item.id, label: item.name, item, flavor: '' }],
+    );
+  }
+  private keyItem(key: string): { item: PublicItem; flavor: string } | null {
+    const { id, flavor } = splitKey(key);
+    const item = this.catalog().find((i) => i.id === id);
+    return item ? { item, flavor } : null;
+  }
+  readonly freeOptions = computed(() => this.expand(this.catalog().filter((i) => i.kind === 'other' && i.shelf === this.settings().freeShelf).sort((a, b) => a.sort - b.sort)));
   readonly count = computed(() => countItems(this.lines()));
   readonly freeCount = computed(() => freeCountFor(this.count(), this.settings()));
   /** Paid-item count at which the next free extra unlocks, or null at the cap. */
@@ -77,9 +88,9 @@ export class BagStore {
     return out;
   });
   readonly freeLines = computed(() =>
-    Object.entries(this.freeItems()).flatMap(([id, qty]) => {
-      const item = this.catalog().find((i) => i.id === id);
-      return item ? [{ item, qty }] : [];
+    Object.entries(this.freeItems()).flatMap(([key, qty]) => {
+      const k = this.keyItem(key);
+      return k ? [{ item: k.item, flavor: k.flavor, qty }] : [];
     }),
   );
   readonly subtotal = computed(() => subtotalCents(this.lines(), this.cartItems()));
@@ -92,17 +103,17 @@ export class BagStore {
     return st.bonusStartCents + n * st.bonusStepCents;
   });
   readonly bonusOptions = computed(() =>
-    this.catalog().filter((i) => i.shelf !== this.settings().freeShelf && i.unitPriceCents <= this.settings().bonusMaxItemCents).sort((a, b) => a.sort - b.sort));
+    this.expand(this.catalog().filter((i) => i.shelf !== this.settings().freeShelf && i.unitPriceCents <= this.settings().bonusMaxItemCents).sort((a, b) => a.sort - b.sort)));
   readonly bonusSlots = computed(() => Array.from({ length: this.bonusCount() }, (_, i) => this.bonusPicks()[i] ?? ''));
   readonly bonusItems = computed(() => {
     const out: Record<string, number> = {};
-    for (const id of this.bonusSlots()) if (id && this.bonusOptions().some((o) => o.id === id)) out[id] = (out[id] ?? 0) + 1;
+    for (const id of this.bonusSlots()) if (id && this.bonusOptions().some((o) => o.key === id)) out[id] = (out[id] ?? 0) + 1;
     return out;
   });
   readonly bonusLines = computed(() =>
-    Object.entries(this.bonusItems()).flatMap(([id, qty]) => {
-      const item = this.catalog().find((i) => i.id === id);
-      return item ? [{ item, qty }] : [];
+    Object.entries(this.bonusItems()).flatMap(([key, qty]) => {
+      const k = this.keyItem(key);
+      return k ? [{ item: k.item, flavor: k.flavor, qty }] : [];
     }),
   );
   private readonly mergedLines = computed(() => {
@@ -120,9 +131,10 @@ export class BagStore {
   readonly late = computed(() => isLate(this.method(), this.clock.now(), this.settings()));
   readonly lateText = computed(() => lateNotice(this.method(), this.settings()));
   readonly bagLines = computed(() =>
-    Object.entries(this.lines())
-      .map(([id, qty]) => ({ item: this.catalog().find((i) => i.id === id), qty }))
-      .filter((l): l is { item: PublicItem; qty: number } => !!l.item),
+    Object.entries(this.lines()).flatMap(([key, qty]) => {
+      const k = this.keyItem(key);
+      return k ? [{ key, item: k.item, flavor: k.flavor, qty }] : [];
+    }),
   );
 
   /** Human-readable blockers shown next to Place order. */
@@ -153,8 +165,13 @@ export class BagStore {
       this.settings.set(settings);
       this.zips.set(zips);
       // Drop anything that disappeared (sold out) since the bag was built.
-      this.lines.update((l) => Object.fromEntries(Object.entries(l).filter(([id]) => catalog.some((c) => c.id === id && c.shelf !== settings.freeShelf))));
-      this.freePicks.update((p) => p.map((id) => (catalog.some((c) => c.id === id && c.kind === 'other' && c.shelf === this.settings().freeShelf) ? id : '')));
+      const okKey = (key: string, pred: (c: PublicItem) => boolean) => {
+        const { id, flavor } = splitKey(key);
+        const c = catalog.find((x) => x.id === id);
+        return !!c && pred(c) && flavorOk(c, flavor);
+      };
+      this.lines.update((l) => Object.fromEntries(Object.entries(l).filter(([key]) => okKey(key, (c) => c.shelf !== settings.freeShelf))));
+      this.freePicks.update((p) => p.map((key) => (key && okKey(key, (c) => c.kind === 'other' && c.shelf === settings.freeShelf) ? key : '')));
       this.loadError.set(null);
     } catch (e) {
       this.loadError.set(e instanceof Error ? e.message : 'Could not load the catalog.');
@@ -185,7 +202,7 @@ export class BagStore {
     for (const [id, qty] of Object.entries(s.items)) {
       const it = this.catalog().find((c) => c.id === id);
       if (it?.shelf === this.settings().freeShelf) continue; // gifts are chosen separately
-      if (it) next[id] = qty;
+      if (it) next[it.flavors?.length ? lineKey(id, it.flavors[0]) : id] = qty; // flavored starter items begin with the first flavor; shoppers can change it
       else missing.push(id);
     }
     this.lines.set(next);
@@ -198,9 +215,9 @@ export class BagStore {
     this.placeError.set(null);
     const snapshot = {
       lines: [
-        ...this.bagLines().map((l) => ({ name: l.item.name, qty: l.qty, totalCents: l.qty * l.item.unitPriceCents })),
-        ...this.freeLines().map((l) => ({ name: l.item.name, qty: l.qty, totalCents: 0, free: true })),
-        ...this.bonusLines().map((l) => ({ name: l.item.name, qty: l.qty, totalCents: 0, free: true })),
+        ...this.bagLines().map((l) => ({ name: l.item.name + (l.flavor ? ` (${l.flavor})` : ''), qty: l.qty, totalCents: l.qty * l.item.unitPriceCents })),
+        ...this.freeLines().map((l) => ({ name: l.item.name + (l.flavor ? ` (${l.flavor})` : ''), qty: l.qty, totalCents: 0, free: true })),
+        ...this.bonusLines().map((l) => ({ name: l.item.name + (l.flavor ? ` (${l.flavor})` : ''), qty: l.qty, totalCents: 0, free: true })),
       ],
       name: this.name().trim(), payMethod: this.payMethod(), method: this.method(),
     };
