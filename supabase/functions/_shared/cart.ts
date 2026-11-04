@@ -42,8 +42,15 @@ export function isLargeOrder(count: number, s: Pick<Settings, 'largeOrderItems'>
   return count > s.largeOrderItems;
 }
 
-/** The free extras: exactly `freeItemCount` units, each an available non-Amway item from the free shelf (Cozy extras). */
-export function validateFreeItems(free: CartLines, catalog: CartItem[], s: Pick<Settings, 'freeItemCount' | 'freeShelf'>): CartError[] {
+/** Free extras earned by a bag: none until the minimum order, then `freeItemCount`, plus one per `freeEveryItems` more paid items, capped. */
+export function freeCountFor(paidCount: number, s: Pick<Settings, 'minItems' | 'freeItemCount' | 'freeEveryItems' | 'freeMaxItems'>): number {
+  if (paidCount < s.minItems) return 0;
+  const bonus = Math.floor((paidCount - s.minItems) / Math.max(1, s.freeEveryItems));
+  return Math.min(s.freeMaxItems, s.freeItemCount + bonus);
+}
+
+/** The free extras: exactly `freeCountFor(paidCount)` units, each an available non-Amway item from the free shelf (Cozy extras). */
+export function validateFreeItems(free: CartLines, catalog: CartItem[], s: Pick<Settings, 'minItems' | 'freeItemCount' | 'freeEveryItems' | 'freeMaxItems' | 'freeShelf'>, paidCount: number): CartError[] {
   const errors: CartError[] = [];
   const by = new Map(catalog.map((i) => [i.id, i]));
   for (const [id, q] of Object.entries(free)) {
@@ -51,7 +58,7 @@ export function validateFreeItems(free: CartLines, catalog: CartItem[], s: Pick<
     if (!Number.isInteger(q) || q < 1) errors.push({ code: 'bad_free', itemId: id });
     else if (!it || !it.available || it.kind !== 'other' || it.shelf !== s.freeShelf) errors.push({ code: 'bad_free', itemId: id });
   }
-  if (countItems(free) !== s.freeItemCount) errors.push({ code: 'bad_free' });
+  if (countItems(free) !== freeCountFor(paidCount, s)) errors.push({ code: 'bad_free' });
   return errors;
 }
 

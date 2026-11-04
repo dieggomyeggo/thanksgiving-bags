@@ -32,18 +32,23 @@ import { QtyStepper } from './qty-stepper';
         }
         <p class="muted small">Every order includes a free handwritten thank-you card.</p>
 
-        <div class="free" role="group" aria-labelledby="free-h">
-          <b id="free-h">Your {{ s.settings().freeItemCount }} free extras (from Cozy extras, your choice)</b>
-          @for (slot of s.freeSlots(); track $index) {
-            <mat-form-field appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Free extra {{ $index + 1 }}</mat-label>
-              <mat-select [ngModel]="slot" (ngModelChange)="pickFree($index, $event)" [name]="'free' + $index">
-                <mat-option value="">Choose…</mat-option>
-                @for (o of s.freeOptions(); track o.id) { <mat-option [value]="o.id">{{ o.name }}</mat-option> }
-              </mat-select>
-            </mat-form-field>
-          }
-        </div>
+        @if (s.freeCount() > 0) {
+          <div class="free" role="group" aria-labelledby="free-h">
+            <b id="free-h">Your {{ s.freeCount() }} free extras (from Cozy extras, your choice)</b>
+            @if (s.nextFreeAt(); as next) { <p class="muted small">Add {{ next - s.count() }} more {{ next - s.count() === 1 ? 'item' : 'items' }} for another free extra.</p> }
+            @for (slot of s.freeSlots(); track $index) {
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Free extra {{ $index + 1 }}</mat-label>
+                <mat-select [ngModel]="slot" (ngModelChange)="pickFree($index, $event)" [name]="'free' + $index">
+                  <mat-option value="">Choose…</mat-option>
+                  @for (o of s.freeOptions(); track o.id) { <mat-option [value]="o.id">{{ o.name }}</mat-option> }
+                </mat-select>
+              </mat-form-field>
+            }
+          </div>
+        } @else {
+          <p class="muted small">Add {{ s.settings().minItems - s.count() }} more {{ s.settings().minItems - s.count() === 1 ? 'item' : 'items' }} to unlock {{ s.settings().freeItemCount }} free extras.</p>
+        }
 
         <div class="totals" aria-live="polite">
           <div class="row"><span>Items ({{ s.count() }})</span><span>{{ m(s.subtotal()) }}</span></div>

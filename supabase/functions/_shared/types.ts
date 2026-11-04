@@ -82,7 +82,9 @@ export interface Settings {
   packagingLb: number;
   minItems: number;
   freeShelf: string; // shelf the free extras come from
-  freeItemCount: number; // free non-Amway extras per order, customer's choice
+  freeItemCount: number; // free non-Amway extras earned at the minimum order, customer's choice
+  freeEveryItems: number; // one more free extra for every this many paid items beyond minItems
+  freeMaxItems: number; // cap on free extras per order
   largeOrderItems: number; // an order with MORE than this many items needs owner approval
   unpaidExpiryHours: number;
   charityName: string | null; // null until written permission is on file

@@ -15,6 +15,8 @@ export const DEFAULT_SETTINGS: Settings = {
   minItems: 3,
   freeShelf: 'Cozy extras',
   freeItemCount: 2,
+  freeEveryItems: 3,
+  freeMaxItems: 6,
   largeOrderItems: 20,
   unpaidExpiryHours: 48,
   charityName: null,

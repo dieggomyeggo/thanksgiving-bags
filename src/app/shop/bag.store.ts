@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { countItems, isLargeOrder, subtotalCents, validateCart, weightLb, type CartItem } from '@shared/cart';
+import { countItems, freeCountFor, isLargeOrder, subtotalCents, validateCart, weightLb, type CartItem } from '@shared/cart';
 import { isLate, lateNotice } from '@shared/cutoffs';
 import { DEFAULT_SETTINGS } from '@shared/settings';
 import { quoteShipping } from '@shared/shipping';
@@ -60,7 +60,16 @@ export class BagStore {
     return order;
   });
   readonly freeOptions = computed(() => this.catalog().filter((i) => i.kind === 'other' && i.shelf === this.settings().freeShelf).sort((a, b) => a.sort - b.sort));
-  readonly freeSlots = computed(() => Array.from({ length: this.settings().freeItemCount }, (_, i) => this.freePicks()[i] ?? ''));
+  readonly count = computed(() => countItems(this.lines()));
+  readonly freeCount = computed(() => freeCountFor(this.count(), this.settings()));
+  /** Paid-item count at which the next free extra unlocks, or null at the cap. */
+  readonly nextFreeAt = computed(() => {
+    const st = this.settings();
+    const c = this.count();
+    if (c < st.minItems || this.freeCount() >= st.freeMaxItems) return null;
+    return st.minItems + (this.freeCount() - st.freeItemCount + 1) * Math.max(1, st.freeEveryItems);
+  });
+  readonly freeSlots = computed(() => Array.from({ length: this.freeCount() }, (_, i) => this.freePicks()[i] ?? ''));
   readonly freeItems = computed(() => {
     const out: Record<string, number> = {};
     for (const id of this.freeSlots()) if (id) out[id] = (out[id] ?? 0) + 1;
@@ -72,7 +81,6 @@ export class BagStore {
       return item ? [{ item, qty }] : [];
     }),
   );
-  readonly count = computed(() => countItems(this.lines()));
   readonly subtotal = computed(() => subtotalCents(this.lines(), this.cartItems()));
   private readonly mergedLines = computed(() => {
     const out = { ...this.lines() };
@@ -98,7 +106,7 @@ export class BagStore {
     const p: string[] = [];
     const min = this.settings().minItems;
     if (this.count() < min) p.push(`Add at least ${min} items (${this.count()} so far).`);
-    if (this.freeLines().reduce((a, l) => a + l.qty, 0) < this.settings().freeItemCount) p.push(`Choose your ${this.settings().freeItemCount} free extras.`);
+    if (this.freeLines().reduce((a, l) => a + l.qty, 0) < this.freeCount()) p.push(`Choose your ${this.freeCount()} free extras.`);
     if (!this.name().trim()) p.push('Name needed.');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(this.email().trim())) p.push('A valid email is needed.');
     if (this.method() !== 'pickup') {

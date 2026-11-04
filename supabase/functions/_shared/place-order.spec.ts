@@ -3,6 +3,8 @@ import { MemoryDb } from './memory-db.ts';
 import { handlePlaceOrder, type PlaceOrderDeps } from './place-order.ts';
 import { SEED_ITEMS, SEED_STARTERS } from './seed-catalog.ts';
 import type { Mail } from './db.ts';
+import { freeCountFor } from './cart.ts';
+import { DEFAULT_SETTINGS } from './settings.ts';
 
 const ZIPS = [
   { zip: '50131', zone: 'near' as const },
@@ -17,8 +19,12 @@ let deps: PlaceOrderDeps;
 const P = (id: string) => SEED_ITEMS.find((i) => i.id === id)!.unitPriceCents;
 const FREE = { 'hand-warmer': 1, 'candy-cane': 1 };
 const bag = { 'xs-energy-can': 2, 'honey-stick': 1 }; // 3 items
+const freeFor = (items: Record<string, number>) => {
+  const n = freeCountFor(Object.values(items).reduce((a, b) => a + b, 0), DEFAULT_SETTINGS);
+  return n <= 2 ? FREE : { 'hand-warmer': n - 1, 'candy-cane': 1 };
+};
 const base = (over: Record<string, unknown> = {}) => ({
-  items: bag, freeItems: FREE, method: 'pickup', payMethod: 'zelle', name: 'Pat Doe', email: 'pat@example.com',
+  items: bag, freeItems: freeFor((over['items'] as Record<string, number>) ?? bag), method: 'pickup', payMethod: 'zelle', name: 'Pat Doe', email: 'pat@example.com',
   expectedTotalCents: 2 * P('xs-energy-can') + P('honey-stick'), website: '', ...over,
 });
 
@@ -191,6 +197,12 @@ describe('handlePlaceOrder', () => {
         expect(JSON.stringify(r.body)).toContain('bad_free');
       }
     });
+    it('gives more free extras for bigger bags and rejects the old flat count', async () => {
+      const big = { 'xs-energy-can': 4, 'honey-stick': 2 }; // 6 paid items earn 3 free
+      const exp = 4 * P('xs-energy-can') + 2 * P('honey-stick');
+      expect((await handlePlaceOrder(base({ items: big, freeItems: FREE, expectedTotalCents: exp }), deps)).status).toBe(422);
+      expect((await handlePlaceOrder(base({ items: big, freeItems: { 'hand-warmer': 2, 'candy-cane': 1 }, expectedTotalCents: exp }), deps)).status).toBe(200);
+    });
     it('allows two of the same extra', async () => {
       expect((await handlePlaceOrder(base({ freeItems: { 'hand-warmer': 2 } }), deps)).status).toBe(200);
     });
@@ -215,9 +227,9 @@ describe('handlePlaceOrder', () => {
     it('extras count toward shipping weight', async () => {
       // 8 lb boundary: 3 dish drops 6.9 + packaging 0.5 = 7.4; +2 hand-warmer-weight extras (0.1 each) stays under, so push over with 1 more drop
       const items = { 'dish-drops': 3, 'honey-stick': 3 }; // 6.9 + .15 + .5 = 7.55
-      const ok = await handlePlaceOrder(base({ method: 'ship', zip: '60601', address: 'x', items, freeItems: FREE, expectedTotalCents: 3 * P('dish-drops') + 3 * P('honey-stick') + 2200 }), deps);
+      const ok = await handlePlaceOrder(base({ method: 'ship', zip: '60601', address: 'x', items, expectedTotalCents: 3 * P('dish-drops') + 3 * P('honey-stick') + 2200 }), deps);
       expect(ok.body).toMatchObject({ shippingCents: 2200, shippingQuoteNeeded: false });
-      const over = await handlePlaceOrder(base({ method: 'ship', zip: '60601', address: 'x', items: { 'dish-drops': 3, 'honey-stick': 3, 'xs-energy-can': 1 }, freeItems: FREE, expectedTotalCents: null }), deps);
+      const over = await handlePlaceOrder(base({ method: 'ship', zip: '60601', address: 'x', items: { 'dish-drops': 3, 'honey-stick': 3, 'xs-energy-can': 1 }, expectedTotalCents: null }), deps);
       expect(over.body).toMatchObject({ shippingQuoteNeeded: true });
     });
   });

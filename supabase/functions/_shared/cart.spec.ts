@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countItems, isLargeOrder, subtotalCents, validateCart, weightLb } from './cart.ts';
+import { countItems, freeCountFor, isLargeOrder, subtotalCents, validateCart, weightLb } from './cart.ts';
 import { DEFAULT_SETTINGS } from './settings.ts';
 
 const cat = [
@@ -38,5 +38,14 @@ describe('cart', () => {
   it('large order is MORE than 20 items (21 yes, 20 no)', () => {
     expect(isLargeOrder(20, DEFAULT_SETTINGS)).toBe(false);
     expect(isLargeOrder(21, DEFAULT_SETTINGS)).toBe(true);
+  });
+});
+
+describe('freeCountFor', () => {
+  it('is zero below the minimum order, then scales with paid items up to the cap', () => {
+    const f = (n: number) => freeCountFor(n, DEFAULT_SETTINGS);
+    expect([0, 1, 2].map(f)).toEqual([0, 0, 0]);
+    expect([3, 4, 5].map(f)).toEqual([2, 2, 2]);
+    expect([6, 8, 9, 12, 15, 40].map(f)).toEqual([3, 3, 4, 5, 6, 6]);
   });
 });
