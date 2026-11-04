@@ -12,7 +12,7 @@ export interface CartItem {
 }
 
 export interface CartError {
-  code: 'too_few' | 'unknown_item' | 'unavailable' | 'bad_qty' | 'bad_free' | 'free_only';
+  code: 'too_few' | 'unknown_item' | 'unavailable' | 'bad_qty' | 'bad_free' | 'free_only' | 'bad_bonus';
   itemId?: string;
 }
 
@@ -47,6 +47,30 @@ export function freeCountFor(paidCount: number, s: Pick<Settings, 'minItems' | '
   if (paidCount < s.minItems) return 0;
   const bonus = Math.floor((paidCount - s.minItems) / Math.max(1, s.freeEveryItems));
   return Math.min(s.freeMaxItems, s.freeItemCount + bonus);
+}
+
+type BonusSettings = Pick<Settings, 'bonusStartCents' | 'bonusStepCents' | 'bonusMaxItemCents' | 'bonusMaxItems' | 'freeShelf'>;
+
+/** Free paid items earned by spend: one at `bonusStartCents`, then one more per `bonusStepCents`, capped. */
+export function bonusCountFor(subtotal: number, s: Pick<Settings, 'bonusStartCents' | 'bonusStepCents' | 'bonusMaxItems'>): number {
+  if (subtotal < s.bonusStartCents) return 0;
+  return Math.min(s.bonusMaxItems, 1 + Math.floor((subtotal - s.bonusStartCents) / Math.max(1, s.bonusStepCents)));
+}
+
+/** Items a customer may take free: sellable shelf items at or under the price limit. */
+export const isBonusEligible = (it: Pick<CartItem, 'available' | 'shelf' | 'unitPriceCents'>, s: BonusSettings): boolean =>
+  it.available && it.shelf !== s.freeShelf && it.unitPriceCents <= s.bonusMaxItemCents;
+
+/** The spend bonus is optional: up to `bonusCountFor(subtotal)` units, each an eligible paid item. */
+export function validateBonusItems(bonus: CartLines, catalog: CartItem[], s: BonusSettings, subtotal: number): CartError[] {
+  const errors: CartError[] = [];
+  const by = new Map(catalog.map((i) => [i.id, i]));
+  for (const [id, q] of Object.entries(bonus)) {
+    const it = by.get(id);
+    if (!Number.isInteger(q) || q < 1 || !it || !isBonusEligible(it, s)) errors.push({ code: 'bad_bonus', itemId: id });
+  }
+  if (countItems(bonus) > bonusCountFor(subtotal, s)) errors.push({ code: 'bad_bonus' });
+  return errors;
 }
 
 /** The free extras: exactly `freeCountFor(paidCount)` units, each an available non-Amway item from the free shelf (Cozy extras). */

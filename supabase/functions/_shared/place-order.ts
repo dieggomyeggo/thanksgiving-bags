@@ -1,6 +1,6 @@
 // Core of the place-order Edge Function. The server recomputes every price, the shipping tier and lateness
 // from the database; nothing the browser sends about money is trusted.
-import { countItems, isLargeOrder, subtotalCents, validateCart, validateFreeItems, weightLb, type CartItem } from './cart.ts';
+import { countItems, isLargeOrder, validateBonusItems, subtotalCents, validateCart, validateFreeItems, weightLb, type CartItem } from './cart.ts';
 import { DuplicateNumberError, type Mailer, type ServerDb } from './db.ts';
 import { renderEmail } from './emails.ts';
 import { isLate } from './cutoffs.ts';
@@ -52,6 +52,7 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
 
   const problems: { code: string; itemId?: string }[] = validateCart(input.items, catalog, settings);
   problems.push(...validateFreeItems(input.freeItems, catalog, settings, countItems(input.items)));
+  problems.push(...validateBonusItems(input.bonusItems, catalog, settings, subtotalCents(input.items, catalog)));
   // The free-gift shelf is gifts only: it cannot be bought.
   for (const id of Object.keys(input.items)) if (catalog.find((c) => c.id === id)?.shelf === settings.freeShelf) problems.push({ code: 'free_only', itemId: id });
   for (const [id, qty] of Object.entries(input.items)) {
@@ -68,7 +69,7 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
 
   const count = countItems(input.items);
   const subtotal = subtotalCents(input.items, catalog);
-  const quote = quoteShipping({ method: input.method, zone, weightLb: weightLb({ ...mergeLines(input.items, input.freeItems) }, catalog, settings.packagingLb), settings });
+  const quote = quoteShipping({ method: input.method, zone, weightLb: weightLb({ ...mergeLines(mergeLines(input.items, input.freeItems), input.bonusItems) }, catalog, settings.packagingLb), settings });
   if (quote.kind === 'blocked' || quote.kind === 'needs_zip') return fail(422, 'invalid', { details: [{ code: 'out_of_area' }] });
   const shippingQuoteNeeded = quote.kind === 'quote';
   const shipping = quote.cents ?? 0;
@@ -85,7 +86,7 @@ export async function handlePlaceOrder(raw: unknown, deps: PlaceOrderDeps): Prom
       const it = catalog.find((c) => c.id === itemId)!;
       return { itemId, qty, unitPriceCents: it.unitPriceCents, unitCostCents: it.costCents };
     }),
-    ...Object.entries(input.freeItems).map(([itemId, qty]) => {
+    ...Object.entries({ ...input.freeItems, ...Object.fromEntries(Object.entries(input.bonusItems).map(([k, v]) => [k, (input.freeItems[k] ?? 0) + v])) }).map(([itemId, qty]) => {
       const it = catalog.find((c) => c.id === itemId)!;
       return { itemId, qty, unitPriceCents: 0, unitCostCents: it.costCents, free: true };
     }),

@@ -85,6 +85,10 @@ export interface Settings {
   freeItemCount: number; // free non-Amway extras earned at the minimum order, customer's choice
   freeEveryItems: number; // one more free extra for every this many paid items beyond minItems
   freeMaxItems: number; // cap on free extras per order
+  bonusStartCents: number; // spend this much on paid items to earn the first free paid item
+  bonusStepCents: number; // then one more free paid item for each further step of spend
+  bonusMaxItemCents: number; // free paid items must cost at most this much each
+  bonusMaxItems: number; // cap on free paid items per order
   largeOrderItems: number; // an order with MORE than this many items needs owner approval
   unpaidExpiryHours: number;
   charityName: string | null; // null until written permission is on file

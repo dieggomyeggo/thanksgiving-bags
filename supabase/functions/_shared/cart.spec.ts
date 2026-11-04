@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countItems, freeCountFor, isLargeOrder, subtotalCents, validateCart, weightLb } from './cart.ts';
+import { bonusCountFor, countItems, freeCountFor, isLargeOrder, subtotalCents, validateCart, weightLb } from './cart.ts';
 import { DEFAULT_SETTINGS } from './settings.ts';
 
 const cat = [
@@ -47,5 +47,14 @@ describe('freeCountFor', () => {
     expect([0, 1, 2].map(f)).toEqual([0, 0, 0]);
     expect([3, 4, 5].map(f)).toEqual([2, 2, 2]);
     expect([6, 8, 9, 12, 15, 40].map(f)).toEqual([3, 3, 4, 5, 6, 6]);
+  });
+});
+
+describe('bonusCountFor', () => {
+  it('is one free paid item at $20, then one more per extra $10', () => {
+    const f = (c: number) => bonusCountFor(c, DEFAULT_SETTINGS);
+    expect([0, 1999].map(f)).toEqual([0, 0]);
+    expect([2000, 2999, 3000, 4000, 5000].map(f)).toEqual([1, 1, 2, 3, 4]);
+    expect(f(100000)).toBe(DEFAULT_SETTINGS.bonusMaxItems);
   });
 });

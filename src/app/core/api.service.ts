@@ -5,6 +5,7 @@ import type {
 export interface PlaceOrderRequest {
   items: Record<string, number>;
   freeItems: Record<string, number>;
+  bonusItems?: Record<string, number>;
   method: Method;
   zip: string | null;
   address: string | null;

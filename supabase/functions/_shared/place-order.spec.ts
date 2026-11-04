@@ -203,6 +203,29 @@ describe('handlePlaceOrder', () => {
       expect((await handlePlaceOrder(base({ items: big, freeItems: FREE, expectedTotalCents: exp }), deps)).status).toBe(422);
       expect((await handlePlaceOrder(base({ items: big, freeItems: { 'hand-warmer': 2, 'candy-cane': 1 }, expectedTotalCents: exp }), deps)).status).toBe(200);
     });
+    describe('spend bonus', () => {
+      const cheap = SEED_ITEMS.filter((i) => i.unitPriceCents <= 400 && i.shelf !== 'Cozy extras' && i.kind === 'amway')[0]!;
+      const pricey = SEED_ITEMS.find((i) => i.unitPriceCents > 400 && i.shelf !== 'Cozy extras')!;
+      const spend = (n: number) => ({ [pricey.id]: n });
+      const sub = (n: number) => n * P(pricey.id);
+      it('refuses a free paid item below $20, an item over the price limit, or too many', async () => {
+        const small = { [pricey.id]: 3 };
+        const under = Math.ceil(2000 / P(pricey.id)) - 1;
+        expect((await handlePlaceOrder(base({ items: spend(under), bonusItems: { [cheap.id]: 1 }, expectedTotalCents: null }), deps)).status).toBe(422);
+        const n = Math.ceil(2000 / P(pricey.id));
+        const ok = { items: spend(n), expectedTotalCents: sub(n) };
+        expect((await handlePlaceOrder(base({ ...ok, bonusItems: { [pricey.id]: 1 } }), deps)).status).toBe(422);
+        expect((await handlePlaceOrder(base({ ...ok, bonusItems: { [cheap.id]: 2 } }), deps)).status).toBe(422);
+        void small;
+      });
+      it('accepts one free cheap item at $20+, free of charge and counted at cost', async () => {
+        const n = Math.ceil(2000 / P(pricey.id));
+        const r = await handlePlaceOrder(base({ items: spend(n), bonusItems: { [cheap.id]: 1 }, expectedTotalCents: sub(n) }), deps);
+        expect(r.status).toBe(200);
+        expect(db.orders[0].totalCents).toBe(sub(n));
+        expect(db.orders[0].lines.find((l) => l.itemId === cheap.id)).toMatchObject({ unitPriceCents: 0, free: true });
+      });
+    });
     it('allows two of the same extra', async () => {
       expect((await handlePlaceOrder(base({ freeItems: { 'hand-warmer': 2 } }), deps)).status).toBe(200);
     });

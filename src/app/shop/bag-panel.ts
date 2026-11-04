@@ -50,6 +50,24 @@ import { QtyStepper } from './qty-stepper';
           <p class="muted small">Add {{ s.settings().minItems - s.count() }} more {{ s.settings().minItems - s.count() === 1 ? 'item' : 'items' }} to unlock {{ s.settings().freeItemCount }} free extras.</p>
         }
 
+        @if (s.bonusCount() > 0) {
+          <div class="free" role="group" aria-labelledby="bonus-h">
+            <b id="bonus-h">{{ s.bonusCount() === 1 ? 'Pick 1 free item' : 'Pick ' + s.bonusCount() + ' free items' }} (each {{ m(s.settings().bonusMaxItemCents) }} or less)</b>
+            @for (slot of s.bonusSlots(); track $index) {
+              <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Free item {{ $index + 1 }}</mat-label>
+                <mat-select [ngModel]="slot" (ngModelChange)="pickBonus($index, $event)" [name]="'bonus' + $index">
+                  <mat-option value="">None</mat-option>
+                  @for (o of s.bonusOptions(); track o.id) { <mat-option [value]="o.id">{{ o.name }} ({{ m(o.unitPriceCents) }} value)</mat-option> }
+                </mat-select>
+              </mat-form-field>
+            }
+          </div>
+        }
+        @if (s.nextBonusAtCents(); as nb) {
+          <p class="muted small">Spend {{ m(nb - s.subtotal()) }} more to earn {{ s.bonusCount() === 0 ? 'a free item' : 'another free item' }}.</p>
+        }
+
         <div class="totals" aria-live="polite">
           <div class="row"><span>Items ({{ s.count() }})</span><span>{{ m(s.subtotal()) }}</span></div>
           <div class="row"><span class="muted">{{ s.quote().label }}</span><span>{{ s.quote().cents === null ? '—' : m(s.quote().cents!) }}</span></div>
@@ -97,6 +115,11 @@ export class BagPanel {
   protected readonly m = money;
   readonly place = output<void>();
 
+  protected pickBonus(i: number, id: string): void {
+    const next = [...this.s.bonusSlots()];
+    next[i] = id;
+    this.s.bonusPicks.set(next);
+  }
   protected pickFree(i: number, id: string): void {
     this.s.freePicks.set(this.withSlot(i, id));
   }

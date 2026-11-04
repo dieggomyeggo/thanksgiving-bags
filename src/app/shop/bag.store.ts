@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { countItems, freeCountFor, isLargeOrder, subtotalCents, validateCart, weightLb, type CartItem } from '@shared/cart';
+import { bonusCountFor, countItems, freeCountFor, isLargeOrder, subtotalCents, validateCart, weightLb, type CartItem } from '@shared/cart';
 import { isLate, lateNotice } from '@shared/cutoffs';
 import { DEFAULT_SETTINGS } from '@shared/settings';
 import { quoteShipping } from '@shared/shipping';
@@ -38,6 +38,7 @@ export class BagStore {
   readonly lines = signal<Record<string, number>>({});
   /** Customer's free non-Amway extras: one slot per free item ('' = not chosen yet). */
   readonly freePicks = signal<string[]>(['', '']);
+  readonly bonusPicks = signal<string[]>(['']);
   readonly method = signal<Method>('deliver');
   readonly zip = signal('');
   readonly address = signal('');
@@ -82,9 +83,32 @@ export class BagStore {
     }),
   );
   readonly subtotal = computed(() => subtotalCents(this.lines(), this.cartItems()));
+  /** Free paid items earned by spend (optional picks), cheap items only. */
+  readonly bonusCount = computed(() => bonusCountFor(this.subtotal(), this.settings()));
+  readonly nextBonusAtCents = computed(() => {
+    const st = this.settings();
+    const n = this.bonusCount();
+    if (n >= st.bonusMaxItems) return null;
+    return st.bonusStartCents + n * st.bonusStepCents;
+  });
+  readonly bonusOptions = computed(() =>
+    this.catalog().filter((i) => i.shelf !== this.settings().freeShelf && i.unitPriceCents <= this.settings().bonusMaxItemCents).sort((a, b) => a.sort - b.sort));
+  readonly bonusSlots = computed(() => Array.from({ length: this.bonusCount() }, (_, i) => this.bonusPicks()[i] ?? ''));
+  readonly bonusItems = computed(() => {
+    const out: Record<string, number> = {};
+    for (const id of this.bonusSlots()) if (id && this.bonusOptions().some((o) => o.id === id)) out[id] = (out[id] ?? 0) + 1;
+    return out;
+  });
+  readonly bonusLines = computed(() =>
+    Object.entries(this.bonusItems()).flatMap(([id, qty]) => {
+      const item = this.catalog().find((i) => i.id === id);
+      return item ? [{ item, qty }] : [];
+    }),
+  );
   private readonly mergedLines = computed(() => {
     const out = { ...this.lines() };
     for (const [k, v] of Object.entries(this.freeItems())) out[k] = (out[k] ?? 0) + v;
+    for (const [k, v] of Object.entries(this.bonusItems())) out[k] = (out[k] ?? 0) + v;
     return out;
   });
   readonly weight = computed(() => weightLb(this.mergedLines(), this.cartItems(), this.settings().packagingLb));
@@ -176,12 +200,13 @@ export class BagStore {
       lines: [
         ...this.bagLines().map((l) => ({ name: l.item.name, qty: l.qty, totalCents: l.qty * l.item.unitPriceCents })),
         ...this.freeLines().map((l) => ({ name: l.item.name, qty: l.qty, totalCents: 0, free: true })),
+        ...this.bonusLines().map((l) => ({ name: l.item.name, qty: l.qty, totalCents: 0, free: true })),
       ],
       name: this.name().trim(), payMethod: this.payMethod(), method: this.method(),
     };
     try {
       const r = await this.api.placeOrder({
-        items: this.lines(), freeItems: this.freeItems(), method: this.method(), zip: this.method() === 'pickup' ? null : this.zip().trim() || null,
+        items: this.lines(), freeItems: this.freeItems(), bonusItems: this.bonusItems(), method: this.method(), zip: this.method() === 'pickup' ? null : this.zip().trim() || null,
         address: this.method() === 'pickup' ? null : this.address().trim() || null, name: this.name().trim(),
         email: this.email().trim(), phone: this.phone().trim() || null, payMethod: this.payMethod(),
         optFollowup: this.optFollowup(), optShoutout: this.optShoutout(), notes: null, website: this.website(),
@@ -191,6 +216,7 @@ export class BagStore {
         this.confirmation.set({ ...snapshot, number: r.number, subtotalCents: r.subtotalCents, shippingCents: r.shippingCents, totalCents: r.totalCents, late: r.late, needsApproval: r.needsApproval, shippingQuoteNeeded: r.shippingQuoteNeeded });
         this.clear();
         this.freePicks.set(['', '']);
+        this.bonusPicks.set(['']);
       } else {
         this.placeError.set(this.describeError(r));
         if (r.error === 'price_changed') await this.load();
