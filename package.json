@@ -9,7 +9,7 @@
     "test": "npm run test:shared && ng test --watch=false",
     "test:shared": "vitest run",
     "typecheck:functions": "tsc -p tsconfig.functions.json",
-    "build:pages": "ng build --base-href /thanksgiving-bags/ && cp dist/thanksgiving-bags/browser/index.html dist/thanksgiving-bags/browser/404.html",
+    "build:pages": "ng build --base-href / && cp dist/thanksgiving-bags/browser/index.html dist/thanksgiving-bags/browser/404.html",
     "start:mock": "ng serve",
     "gen:seed": "tsx scripts/gen-seed.ts",
     "import:catalog": "tsx scripts/import-catalog.ts"

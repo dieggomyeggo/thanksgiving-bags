@@ -12,8 +12,8 @@ major_version = 17
 
 [auth]
 enabled = true
-site_url = "https://dieggomyeggo.github.io/thanksgiving-bags/"
-additional_redirect_urls = ["http://localhost:4200/admin", "https://dieggomyeggo.github.io/thanksgiving-bags/admin"]
+site_url = "https://thanksgiving.celeste-industries.com/"
+additional_redirect_urls = ["http://localhost:4200/admin", "https://thanksgiving.celeste-industries.com/admin", "https://dieggomyeggo.github.io/thanksgiving-bags/admin"]
 enable_signup = true
 
 [functions.place-order]
