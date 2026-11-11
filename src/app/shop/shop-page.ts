@@ -29,8 +29,7 @@ import { ThemeTiles } from './theme-tiles';
       <div class="wrap">
         <app-hero />
         <div class="notice banner">
-          <b>Thanksgiving cutoffs:</b> shipping orders by {{ pd(s.settings().cutoffShip) }} · local delivery/pickup by {{ pd(s.settings().cutoffLocal) }}.
-          Ordering stays open through {{ pd(s.settings().orderingCloses) }} (after the cutoffs, items arrive after Thanksgiving).
+          <b>Order any time through {{ pd(s.settings().orderingCloses) }}.</b> To arrive before Thanksgiving, order shipping by {{ pd(s.settings().cutoffShip) }} or local delivery/pickup by {{ pd(s.settings().cutoffLocal) }}. Orders placed after that still go through, but they will arrive after Thanksgiving.
           100% of my profit from these bags, plus the Amway bonus I earn from them, goes to {{ charity() }}.
         </div>
         <h2 class="build">Build your bag</h2>
