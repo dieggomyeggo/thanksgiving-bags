@@ -1,3 +1,5 @@
 .demo { background: #3b2a6b; color: #fff; text-align: center; padding: 4px 8px; font-size: 13px; }
 .foot { margin-top: 32px; border-top: 1px solid var(--mat-sys-outline-variant); font-size: 13px; }
-.foot a { margin-left: 12px; }
+.foot .links { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; }
+// On phones the shop's fixed "Your bag" bar sits over the bottom of the page; leave room so the footer links stay visible and tappable.
+@media (max-width: 960px) { .foot { padding-bottom: 76px; } }

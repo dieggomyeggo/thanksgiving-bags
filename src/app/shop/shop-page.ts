@@ -68,12 +68,13 @@ import { ThemeTiles } from './theme-tiles';
   `,
   styles: `
     .layout { display: grid; grid-template-columns: 180px 1fr 340px; gap: 18px; align-items: start; }
+    .layout > * { min-width: 0; }
     .right { position: sticky; top: 12px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
     .disclaimer { font-size: 12px; }
     .mobile-bar { display: none; }
     @media (max-width: 960px) {
-      .layout { grid-template-columns: 1fr; }
+      .layout { grid-template-columns: minmax(0, 1fr); }
       .right { position: static; }
       .mobile-bar {
         display: flex; justify-content: space-between; align-items: center; position: fixed; left: 12px; right: 12px; bottom: 12px;
