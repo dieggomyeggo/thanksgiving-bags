@@ -32,7 +32,7 @@ import { BagStore } from './bag.store';
               <p>{{ pay() }} Put <b>{{ o.number }}</b> in the memo. Unpaid orders are released after {{ s.settings().unpaidExpiryHours }} hours{{ o.payMethod === 'cash' ? ' (cash orders are confirmed by text instead)' : '' }}.</p>
             }
             @if (o.late) { <div class="notice warn">{{ late() }}</div> }
-            <p class="muted">A confirmation email with this summary is on its way. You'll get a "paid" email, then a "ready" email with your window. 100% of my profit from these bags, plus the Amway bonus I earn from them, goes to {{ charity() }}.</p>
+            <p class="muted">A confirmation email with this summary is on its way. You'll get a "paid" email, then a "ready" email with your window. Every dollar of my profit from these bags, plus the Amway bonus I earn from them, is donated to {{ charity() }} as a cash gift.</p>
             <button mat-flat-button type="button" (click)="done.emit()">Start another bag</button>
           </mat-card-content>
         </mat-card>

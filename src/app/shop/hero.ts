@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { Doodle } from './doodle';
 
 /** Warm header band: title, one-line promise, and an autumn leaf garland. */
@@ -11,7 +11,7 @@ import { Doodle } from './doodle';
       <div class="copy">
         <p class="eyebrow">Johnston, Iowa · Thanksgiving 2026</p>
         <h1>Thanksgiving Sample Bags</h1>
-        <p class="lede">Build a cozy little bag for your table, a neighbor or yourself. Every dollar of profit goes to a local food charity, and each bag comes with free gifts and a handwritten thank-you.</p>
+        <p class="lede">Build a sampler bag of Amway products to enjoy, share or gift. Every dollar of my profit is donated to {{ charity() }} as a cash gift, and each bag comes with free gifts and a handwritten thank-you.</p>
       </div>
       <div class="art" aria-hidden="true">
         <app-doodle kind="wheat" [size]="74" [rotate]="-14" class="wheat" />
@@ -55,6 +55,7 @@ import { Doodle } from './doodle';
   `,
 })
 export class Hero {
+  readonly charity = input.required<string>();
   protected readonly leaves = Array.from({ length: 16 }, (_, i) => ({
     r: ((i * 53) % 90) - 45,
     c: ['#c2501f', '#e0a030', '#a8421a', '#d98a2b', '#8a6a2a'][i % 5],

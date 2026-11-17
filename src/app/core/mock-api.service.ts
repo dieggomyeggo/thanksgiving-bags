@@ -11,7 +11,7 @@ import { ClockService } from './clock.service';
 
 const toPublic = (i: ItemRow): PublicItem => ({
   id: i.id, shelf: i.shelf, name: i.name, kind: i.kind, unitPriceCents: i.unitPriceCents,
-  weightLb: i.weightLb, tags: i.tagsVerified ? i.tags : {}, tagsVerified: i.tagsVerified, sort: i.sort, flavors: i.flavors ?? [],
+  weightLb: i.weightLb, tags: i.tagsVerified ? i.tags : {}, tagsVerified: i.tagsVerified, sort: i.sort, flavors: i.flavors ?? [], imageUrl: i.imageUrl ?? null, productUrl: i.productUrl ?? null,
 });
 const available = (i: ItemRow) => i.active && !i.soldOut && (i.stock === null || i.stock > 0);
 
@@ -51,6 +51,14 @@ export class MockApiService extends ApiService {
   async signInWithEmail(email: string) { this.signedIn = email.trim().toLowerCase() || 'demo@example.com'; }
   async signOut() { this.signedIn = null; }
 
+  async adminUploadItemImage(_itemId: string, file: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = () => reject(new Error('Could not read the photo.'));
+      r.readAsDataURL(file);
+    });
+  }
   async adminItems() { return structuredClone(this.db.items); }
   async adminSaveItems(items: ItemRow[]) {
     for (const it of items) {

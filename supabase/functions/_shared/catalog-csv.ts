@@ -104,7 +104,7 @@ export function catalogFromCsv(text: string): CatalogImport {
       pv: pvBox === null ? null : +(pvBox / boxSize).toFixed(2), bv: bvBox === null ? null : +(bvBox / boxSize).toFixed(2),
       weightLb: weightLb ?? 0.2, boxSize, tags, tagsVerified: true,
       individuallyWrapped: !filled(r[idx.wrapped]) || yes(r[idx.wrapped]),
-      flavors: flavorCol >= 0 ? (r[flavorCol] ?? '').split(/[;|]/).map((x) => x.trim().replace(/@@/g, '')).filter(Boolean) : [],
+      ...(flavorCol >= 0 && { flavors: (r[flavorCol] ?? '').split(/[;|]/).map((x) => x.trim().replace(/@@/g, '')).filter(Boolean) }),
       stock: null, soldOut: filled(r[idx.stock]) && !yes(r[idx.stock]), active: true, sort: (items.length + 1) * 10,
       unitPriceCents: unitPriceCents(costCents, retailCents),
     });

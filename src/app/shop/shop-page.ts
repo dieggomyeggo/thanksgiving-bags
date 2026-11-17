@@ -12,6 +12,7 @@ import { money } from '../core/format';
 import { BagPanel } from './bag-panel';
 import { BagStore } from './bag.store';
 import { Hero } from './hero';
+import { HowItWorks } from './how-it-works';
 import { ItemCard } from './item-card';
 import { NoticeDialog } from './notice-dialog';
 import { OrderConfirmation } from './order-confirmation';
@@ -20,17 +21,17 @@ import { ThemeTiles } from './theme-tiles';
 
 @Component({
   selector: 'app-shop-page',
-  imports: [RouterLink, MatButton, MatBadge, MatProgressSpinner, Hero, ThemeTiles, ShelfNav, ItemCard, BagPanel, OrderConfirmation],
+  imports: [RouterLink, MatButton, MatBadge, MatProgressSpinner, Hero, HowItWorks, ThemeTiles, ShelfNav, ItemCard, BagPanel, OrderConfirmation],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (s.confirmation()) {
       <app-order-confirmation (done)="s.reset()" />
     } @else {
       <div class="wrap">
-        <app-hero />
+        <app-hero [charity]="charity()" />
+        <app-how-it-works [charity]="charity()" [minItems]="s.settings().minItems" />
         <div class="notice banner">
           <b>Order any time through {{ pd(s.settings().orderingCloses) }}.</b> To arrive before Thanksgiving, order shipping by {{ pd(s.settings().cutoffShip) }} or local delivery/pickup by {{ pd(s.settings().cutoffLocal) }}. Orders placed after that still go through, but they will arrive after Thanksgiving.
-          100% of my profit from these bags, plus the Amway bonus I earn from them, goes to {{ charity() }}.
         </div>
         <h2 class="build">Build your bag</h2>
         <p class="muted">Pick at least {{ s.settings().minItems }} items. Every bag includes a free handwritten thank-you card.</p>

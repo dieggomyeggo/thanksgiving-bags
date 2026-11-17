@@ -64,6 +64,12 @@ export class SupabaseApiService extends ApiService {
   async adminSaveItems(items: ItemRow[]): Promise<void> {
     ok(await this.sb.from('items').upsert(items.map(itemToRow), { onConflict: 'id' }));
   }
+  async adminUploadItemImage(itemId: string, file: Blob): Promise<string> {
+    const path = `${itemId.replace(/[^a-z0-9-]/gi, '')}-${Date.now()}.jpg`;
+    const res = await this.sb.storage.from('item-images').upload(path, file, { contentType: 'image/jpeg', cacheControl: '31536000' });
+    if (res.error) throw new Error(res.error.message);
+    return this.sb.storage.from('item-images').getPublicUrl(path).data.publicUrl;
+  }
   async adminStarters(): Promise<StarterBag[]> {
     return (ok(await this.sb.from('starter_bags').select('*').order('sort')) as any[]).map(starterFromRow);
   }

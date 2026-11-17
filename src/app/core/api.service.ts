@@ -51,6 +51,8 @@ export abstract class ApiService {
   // Admin data (RLS: admins only)
   abstract adminItems(): Promise<ItemRow[]>;
   abstract adminSaveItems(items: ItemRow[]): Promise<void>;
+  /** Stores an item photo and returns the URL shoppers will load it from. */
+  abstract adminUploadItemImage(itemId: string, file: Blob): Promise<string>;
   abstract adminStarters(): Promise<StarterBag[]>;
   abstract adminSaveStarters(s: StarterBag[]): Promise<void>;
   abstract adminOrders(): Promise<OrderRow[]>;

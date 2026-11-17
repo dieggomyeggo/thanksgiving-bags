@@ -14,9 +14,15 @@ import { TagChips } from './tag-chips';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <mat-card appearance="outlined" class="item">
+      @if (image()) {
+        <img class="photo" [src]="image()" [alt]="item().name" loading="lazy" width="400" height="300">
+      }
       <mat-card-content>
         <div class="name">{{ item().name }}</div>
         <div class="muted price">{{ price(item().unitPriceCents) }}</div>
+        @if (link()) {
+          <a class="more" [href]="link()" target="_blank" rel="noopener noreferrer">See details{{ item().kind === 'amway' ? ' on Amway' : '' }} ↗</a>
+        }
         <app-tag-chips [tags]="item().tags" />
         @if (flavors().length) {
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="flavor">
@@ -40,7 +46,9 @@ import { TagChips } from './tag-chips';
     </mat-card>
   `,
   styles: `
-    .item { height: 100%; }
+    .item { height: 100%; overflow: hidden; }
+    .photo { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--mat-sys-surface-container-high); }
+    .more { font-size: 13px; display: inline-block; margin: 2px 0 4px; }
     .name { font-weight: 600; }
     .price { margin-bottom: 4px; }
     .flavor { width: 100%; margin-top: 6px; }
@@ -55,6 +63,8 @@ export class ItemCard {
   readonly inc = output<string>();
   readonly dec = output<string>();
   protected readonly price = money;
+  protected readonly image = computed(() => (/^(https:\/\/|data:image\/)/.test(this.item().imageUrl ?? '') ? this.item().imageUrl! : ''));
+  protected readonly link = computed(() => (/^https:\/\//.test(this.item().productUrl ?? '') ? this.item().productUrl! : ''));
   protected readonly flavor = signal('');
   protected readonly flavors = computed(() => this.item().flavors ?? []);
   protected readonly key = computed(() => lineKey(this.item().id, this.flavor()));

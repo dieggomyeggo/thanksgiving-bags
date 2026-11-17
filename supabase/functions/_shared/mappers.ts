@@ -14,6 +14,7 @@ export function itemFromRow(r: Row): ItemRow {
     tagsVerified: !!r['tags_verified'], individuallyWrapped: !!r['individually_wrapped'],
     stock: r['stock'] ?? null, soldOut: !!r['sold_out'], active: !!r['active'], sort: r['sort'] ?? 0,
     unitPriceCents: r['unit_price_cents'], flavors: Array.isArray(r['flavors']) ? r['flavors'] : [],
+    imageUrl: r['image_url'] ?? null, productUrl: r['product_url'] ?? null,
   };
 }
 
@@ -22,7 +23,11 @@ export function itemToRow(i: ItemRow): Row {
     id: i.id, shelf: i.shelf, name: i.name, kind: i.kind, cost_cents: i.costCents, retail_cents: i.retailCents,
     pv: i.pv, bv: i.bv, weight_lb: i.weightLb, box_size: i.boxSize, tags: i.tags, tags_verified: i.tagsVerified,
     individually_wrapped: i.individuallyWrapped, stock: i.stock, sold_out: i.soldOut, active: i.active, sort: i.sort,
-    unit_price_cents: i.unitPriceCents, flavors: i.flavors ?? [],
+    unit_price_cents: i.unitPriceCents,
+    // Only written when set, so a catalog import without these columns never wipes flavors, photos or links.
+    ...(i.flavors !== undefined && { flavors: i.flavors }),
+    ...(i.imageUrl !== undefined && { image_url: i.imageUrl }),
+    ...(i.productUrl !== undefined && { product_url: i.productUrl }),
   };
 }
 
@@ -31,6 +36,7 @@ export function publicItemFromRow(r: Row): PublicItem {
     id: r['id'], shelf: r['shelf'], name: r['name'], kind: r['kind'], unitPriceCents: r['unit_price_cents'],
     weightLb: Number(r['weight_lb']), tags: r['tags'] ?? {}, tagsVerified: !!r['tags_verified'], sort: r['sort'] ?? 0,
     flavors: Array.isArray(r['flavors']) ? r['flavors'] : [],
+    imageUrl: r['image_url'] ?? null, productUrl: r['product_url'] ?? null,
   };
 }
 

@@ -33,6 +33,10 @@ import { NoticeDialog } from '../shop/notice-dialog';
 
     <div class="table-wrap">
       <table mat-table [dataSource]="ds" matSort aria-label="Catalog">
+        <ng-container matColumnDef="photo"><th mat-header-cell *matHeaderCellDef>Photo</th><td mat-cell *matCellDef="let i">
+          @if (i.imageUrl) { <img class="pic" [src]="i.imageUrl" [alt]="i.name"> } @else { <span class="muted small">none</span> }
+          @if (i.productUrl) { <div class="small"><a [href]="i.productUrl" target="_blank" rel="noopener noreferrer">link</a></div> } @else { <div class="muted small">no link</div> }
+        </td></ng-container>
         <ng-container matColumnDef="name"><th mat-header-cell *matHeaderCellDef mat-sort-header>Item</th><td mat-cell *matCellDef="let i">{{ i.name }}<div class="muted small">{{ i.id }}</div></td></ng-container>
         <ng-container matColumnDef="shelf"><th mat-header-cell *matHeaderCellDef mat-sort-header>Shelf</th><td mat-cell *matCellDef="let i">{{ i.shelf }}</td></ng-container>
         <ng-container matColumnDef="costCents"><th mat-header-cell *matHeaderCellDef mat-sort-header>Cost</th><td mat-cell *matCellDef="let i">{{ m(i.costCents) }}</td></ng-container>
@@ -64,6 +68,7 @@ import { NoticeDialog } from '../shop/notice-dialog';
     .head { flex-wrap: wrap; } .small { font-size: 11px; }
     .table-wrap { overflow-x: auto; } table { width: 100%; background: transparent; }
     .inactive { opacity: .5; }
+    .pic { width: 56px; height: 42px; object-fit: cover; border-radius: 6px; display: block; }
   `,
 })
 export class CatalogEditor {
@@ -71,7 +76,7 @@ export class CatalogEditor {
   private readonly dialog = inject(MatDialog);
   private readonly snack = inject(MatSnackBar);
   protected readonly m = money;
-  protected readonly cols = ['name', 'shelf', 'costCents', 'unitPriceCents', 'margin', 'tags', 'stock', 'soldOut', 'actions'];
+  protected readonly cols = ['photo', 'name', 'shelf', 'costCents', 'unitPriceCents', 'margin', 'tags', 'stock', 'soldOut', 'actions'];
   protected readonly ds = new MatTableDataSource<ItemRow>([]);
   private readonly rows = computed(() => this.data.items());
 

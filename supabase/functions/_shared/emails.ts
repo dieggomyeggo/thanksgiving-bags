@@ -59,7 +59,7 @@ export function renderEmail(kind: EmailKind, o: EmailOrder, s: Settings): Render
   let subject = '';
   if (kind === 'placed') {
     subject = `Your Thanksgiving bag order ${o.number}`;
-    parts.push(`Thanks for your order ${o.number}! 100% of my profit from these bags, plus the Amway bonus I earn from them, goes to ${charityLabel(s)}.`, '', summaryText(o), '');
+    parts.push(`Thanks for your order ${o.number}! Every dollar of my profit from these bags, plus the Amway bonus I earn from them, is donated to ${charityLabel(s)} as a cash gift.`, '', summaryText(o), '');
     if (o.needsApproval || o.shippingQuoteNeeded) {
       parts.push(
         o.shippingQuoteNeeded

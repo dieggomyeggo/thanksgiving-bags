@@ -47,6 +47,9 @@ export interface ItemRow {
   unitPriceCents: number;
   /** Flavor/variety choices the customer must pick from; empty or missing means the item has none. */
   flavors?: string[];
+  /** Photo (public storage URL) and the product's listing page. Both optional. */
+  imageUrl?: string | null;
+  productUrl?: string | null;
 }
 
 /** What the browser sees (`public_catalog` view): no cost, no PV/BV, no retail, no stock count. */
@@ -61,6 +64,8 @@ export interface PublicItem {
   tagsVerified: boolean;
   sort: number;
   flavors?: string[];
+  imageUrl?: string | null;
+  productUrl?: string | null;
 }
 
 export interface StarterBag {
