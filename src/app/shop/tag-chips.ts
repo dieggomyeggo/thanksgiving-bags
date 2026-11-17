@@ -31,6 +31,7 @@ export class TagChips {
     if (t.sugarFree) out.push({ text: 'sugar-free', kind: 'plain' });
     if (t.organic) out.push({ text: 'organic', kind: 'plain' });
     if (t.vegan) out.push({ text: 'vegan', kind: 'plain' });
+    if (t.kosher) out.push({ text: 'kosher', kind: 'plain' });
     if (t.nsf) out.push({ text: `NSF ${t.nsf}`, kind: 'plain' });
     for (const a of t.allergens ?? []) out.push({ text: a, kind: 'allergen' });
     return out;

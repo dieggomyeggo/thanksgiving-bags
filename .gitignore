@@ -50,3 +50,6 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Owner working notes (include competitor comparisons; keep out of the public repo)
+product_notes.md

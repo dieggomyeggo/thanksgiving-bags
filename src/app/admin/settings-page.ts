@@ -8,6 +8,7 @@ import { MatFormField, MatHint, MatLabel, MatSuffix } from '@angular/material/fo
 import { MatInput } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { bonusShareCents, donationCents, profitCents, promoBv } from '@shared/donation';
+import { SHELVES } from '@shared/shelves';
 import { normalizeZip } from '@shared/zip';
 import type { Settings, ZipRow } from '@shared/types';
 import { dollarsToCents, money } from '../core/format';
@@ -58,6 +59,9 @@ const zipText = (z: ZipRow[], zone: 'near' | 'far') => z.filter((x) => x.zone ==
             <mat-form-field appearance="outline"><mat-label>Venmo handle</mat-label><input matInput [ngModel]="st.payments.venmo" (ngModelChange)="pay('venmo', $event)" name="venmo"></mat-form-field>
             <mat-form-field appearance="outline"><mat-label>Cash App $cashtag</mat-label><input matInput [ngModel]="st.payments.cashapp" (ngModelChange)="pay('cashapp', $event)" name="cashapp"></mat-form-field>
             <mat-form-field appearance="outline" class="wide"><mat-label>"Learn more" link (your Amway site)</mat-label><input matInput [ngModel]="st.learnMoreUrl" (ngModelChange)="set('learnMoreUrl', $event)" name="learn"></mat-form-field>
+            @for (sh of blurbShelves; track sh) {
+              <mat-form-field appearance="outline" class="wide"><mat-label>Shelf intro: {{ sh }}</mat-label><textarea matInput rows="2" [ngModel]="st.shelfBlurbs?.[sh] ?? ''" (ngModelChange)="setBlurb(sh, $event)" [name]="'blurb-' + sh"></textarea></mat-form-field>
+            }
             <mat-form-field appearance="outline" class="wide"><mat-label>Pickup note (never your home address)</mat-label><input matInput [ngModel]="st.pickupNote" (ngModelChange)="set('pickupNote', $event)" name="pickup"></mat-form-field>
           </div>
 
@@ -127,6 +131,8 @@ export class SettingsPage {
     void this.data.api.adminZips().then((z) => { this.near.set(zipText(z, 'near')); this.far.set(zipText(z, 'far')); });
   }
 
+  protected readonly blurbShelves = SHELVES as readonly string[];
+  protected setBlurb(shelf: string, text: string): void { this.s.update((x) => (x ? { ...x, shelfBlurbs: { ...(x.shelfBlurbs ?? {}), [shelf]: text } } : x)); }
   protected set<K extends keyof Settings>(k: K, v: Settings[K]): void { this.s.update((x) => (x ? { ...x, [k]: v } : x)); }
   protected pay(k: 'zelle' | 'venmo' | 'cashapp', v: string): void { this.s.update((x) => (x ? { ...x, payments: { ...x.payments, [k]: v } } : x)); }
   protected tier(i: number, v: string): void {

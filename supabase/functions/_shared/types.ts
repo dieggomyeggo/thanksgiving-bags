@@ -21,6 +21,7 @@ export interface ItemTags {
   sugarFree?: boolean;
   organic?: boolean;
   vegan?: boolean;
+  kosher?: boolean;
   nsf?: string | null;
   allergens?: string[];
 }
@@ -105,6 +106,8 @@ export interface Settings {
   contactPhone: string;
   payments: { zelle: string; venmo: string; cashapp: string };
   learnMoreUrl: string;
+  /** Short intro shown above each shelf, keyed by shelf name. */
+  shelfBlurbs: Record<string, string>;
   pickupNote: string;
   totals: PublishedTotals;
 }

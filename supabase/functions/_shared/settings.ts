@@ -33,6 +33,7 @@ export const DEFAULT_SETTINGS: Settings = {
     cashapp: '[$cashtag]',
   },
   learnMoreUrl: '',
+  shelfBlurbs: {},
   pickupNote: 'Pickup in the Johnston, IA area. Exact spot sent after you order.',
   totals: { published: false, profitCents: 0, bonusCents: 0, updatedAt: null },
 };

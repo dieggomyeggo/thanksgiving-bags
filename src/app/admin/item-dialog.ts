@@ -67,6 +67,7 @@ import { dollarsToCents, money } from '../core/format';
       <mat-checkbox [(ngModel)]="sugarFree" name="sf">Sugar-free</mat-checkbox>
       <mat-checkbox [(ngModel)]="organic" name="org">Organic</mat-checkbox>
       <mat-checkbox [(ngModel)]="vegan" name="vegan">Vegan</mat-checkbox>
+      <mat-checkbox [(ngModel)]="kosher" name="kosher">Kosher certified</mat-checkbox>
       <mat-checkbox [(ngModel)]="wrapped" name="wrapped">Individually wrapped</mat-checkbox>
       <mat-checkbox [(ngModel)]="verified" name="verified" class="wide">Tags verified against the label (show them to shoppers)</mat-checkbox>
       <mat-checkbox [(ngModel)]="soldOut" name="soldOut">Sold out</mat-checkbox>
@@ -120,6 +121,7 @@ export class ItemDialog {
   protected readonly sugarFree = signal(!!this.src?.tags.sugarFree);
   protected readonly organic = signal(!!this.src?.tags.organic);
   protected readonly vegan = signal(!!this.src?.tags.vegan);
+  protected readonly kosher = signal(!!this.src?.tags.kosher);
   protected readonly wrapped = signal(this.src?.individuallyWrapped ?? true);
   protected readonly verified = signal(this.src?.tagsVerified ?? false);
   protected readonly soldOut = signal(this.src?.soldOut ?? false);
@@ -165,6 +167,7 @@ export class ItemDialog {
     if (this.sugarFree()) tags.sugarFree = true;
     if (this.organic()) tags.organic = true;
     if (this.vegan()) tags.vegan = true;
+    if (this.kosher()) tags.kosher = true;
     if (this.nsf().trim()) tags.nsf = this.nsf().trim();
     const al = this.allergens().split(',').map((x) => x.trim()).filter(Boolean);
     if (al.length) tags.allergens = al;

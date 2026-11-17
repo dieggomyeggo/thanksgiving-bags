@@ -46,6 +46,7 @@ import { ThemeTiles } from './theme-tiles';
             <div class="center">
               <app-theme-tiles [starters]="s.starters()" (pick)="pickStarter($event)" (scratch)="scratch()" />
               <h2>{{ shelf() }}</h2>
+              @if (blurb()) { <p class="blurb">{{ blurb() }}</p> }
               <div class="grid">
                 @for (i of shelfItems(); track i.id) {
                   <app-item-card [item]="i" [lines]="s.lines()" (inc)="s.inc($event)" (dec)="s.dec($event)" />
@@ -72,6 +73,7 @@ import { ThemeTiles } from './theme-tiles';
     .right { position: sticky; top: 12px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
     .disclaimer { font-size: 12px; }
+    .blurb { margin: 0 0 12px; max-width: 70ch; color: var(--mat-sys-on-surface-variant); }
     .mobile-bar { display: none; }
     @media (max-width: 960px) {
       .layout { grid-template-columns: minmax(0, 1fr); }
@@ -94,6 +96,7 @@ export class ShopPage {
   protected readonly charity = computed(() => charityLabel(this.s.settings()));
   protected readonly shelf = signal('');
   private readonly activeShelf = computed(() => this.shelf() || this.s.shelves()[0] || '');
+  protected readonly blurb = computed(() => this.s.settings().shelfBlurbs?.[this.activeShelf()] ?? '');
   protected readonly shelfItems = computed(() => this.s.catalog().filter((i) => i.shelf === this.activeShelf()).sort((a, b) => a.sort - b.sort));
 
   constructor() {
